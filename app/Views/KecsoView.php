@@ -33,7 +33,8 @@ class KecsoView
     public static function CarData()
      {
         $html= '<form method="post" action="'.Config::KECSO_URL_CARDATA.'" enctype="multipart/form-data">';
-        $html .= self::CreateInput('Rendszám', 'license');
+        $view .= '<input type="hidden" name="carId" value="' . $carId . '">';
+        $html .= self::CreateInput('Fálj neve', 'data');
         $html .= '<div>
                     <label for="file">Válassz egy fájlt:</label>
                     <input type="file" name="file" id="file">
@@ -49,16 +50,16 @@ class KecsoView
     
      public static function CarCost()
     { 
-    $view = '<form method="post" action="' . Config::KECSO_URL . '">';
-    $view .= self::CreateInput('Rendszám', 'license');
-    $view .= self::CreateInput('Időpont', 'date');
-    $view .= self::CreateInput('Alkatrész', 'part');
-    $view .= self::CreateInput('Ár', 'price');
-    $view .= '<button type="submit" name="addCarCost">Költség hozzáadása</button>';
-    $view .= '</form>';
+        $html= '<form method="post" action="' . Config::KECSO_URL . '">';
+        $html .= self::CreateInput('Rendszám', 'license');
+        $html .= self::CreateInput('Időpont', 'date');
+        $html .= self::CreateInput('Alkatrész', 'part');
+        $html .= self::CreateInput('Ár', 'price');
+        $html .= '<button type="submit" name="addCarCost">Költség hozzáadása</button>';
+        $html.= '</form>';
 
-    return $view;
-     }
+        return $html;
+    }
 
 
 
@@ -102,30 +103,29 @@ class KecsoView
         return $html;
     }
     //Kecso page
-    private static function ListUploadedImages()
-{
-    $uploadDir = 'uploads/kecso/'; // Például a 'kecso' mappa
+   
+    private static function ListUploadedImages() 
+    {
+        $images = Model::GetImages();
+        $html = '<h2>Feltöltött képek:</h2>';
     
-    $html = '<h2>Feltöltött képek:</h2>';
-
-    if (is_dir($uploadDir)) {
-        $files = glob($uploadDir . '*.{jpg,jpeg,png,gif}', GLOB_BRACE);
-        if (!empty($files)) {
+        if (!empty($images)) {
             $html .= '<ul>';
-            foreach ($files as $file) {
-                $fileName = basename($file);
-                $html .= '<li><img src="' . $uploadDir . $fileName . '" width="200" height="auto"></li>';
+            foreach ($images as $image) {
+                $fileName = $image['file'];
+                $license = $image['data'];  // Itt változtatva "license"-ról "data"-ra
+                $html .= '<li>
+                            <p>Rendszám: ' . htmlspecialchars($license) . '</p>
+                            <img src="uploads/kecso/' . htmlspecialchars($fileName) . '" width="200" height="auto">
+                          </li>';
             }
             $html .= '</ul>';
         } else {
             $html .= '<p>Nincsenek feltöltött képek.</p>';
         }
-    } else {
-        $html .= '<p>Az upload könyvtár nem létezik.</p>';
+    
+        return $html;
     }
-
-    return $html;
-}
 private static function DisplayCarCosts()
 {
     $carCosts = Model::GetCarCosts(); // Módosítani a model függvény nevét és paramétereit
