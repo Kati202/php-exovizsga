@@ -8,6 +8,8 @@ use App\Views\IndexView;
 use App\Views\KecsoView;
 use App\Models\Model;
 use App\Requests\Request;
+use App\Config;
+
 
 class Kecso
 {
@@ -47,20 +49,22 @@ class Kecso
     }
 
     public function cardata($param): string
-    {
+   {
+        $carId = isset($param) ? $param : null;
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Gépjármű adatai');
         $view.=Model::Init();
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
+       
+        $uploadedFileName = '';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) 
+    {
+          
             $carId = $_POST['carId'];
             $file = $_FILES['file'];
     
-        if (isset($_POST['data']) && !empty($_POST['data'])) 
+    
         {
-            $file = $_FILES['file'];
-
-            if ($file['error'] === UPLOAD_ERR_OK) 
+          if ($file['error'] === UPLOAD_ERR_OK) 
             {
                 $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
                 $detectedType = mime_content_type($file['tmp_name']);
@@ -79,11 +83,12 @@ class Kecso
 
                     if (move_uploaded_file($file['tmp_name'], $uploadFile)) 
                     {
+                        $uploadedFileName = basename($file['name']);
                         $imageData = [
                             'data' => $_POST['data'],
-                            'file' => basename($file['name'])
+                            'file' => $uploadedFileName
                         ];
-                        Model::InsertImage($imageData);
+                        Model::InsertImage($carId,$imageData);
 
                         $view .= "A kép sikeresen feltöltve: " . htmlspecialchars($file['name']);
                     } 
@@ -102,10 +107,7 @@ class Kecso
                 $view .= "Hiba történt a fájl feltöltése során: " . $_FILES['file']['error'];
             }
         } 
-        else 
-        {
-            $view .= "Rendszám megadása kötelező.";
-        }
+       
     }
     $imageData = 
     [
@@ -118,33 +120,36 @@ class Kecso
 
         // Kép feltöltés űrlap megjelenítése
         $carId = isset($_GET['param']) ? $_GET['param'] : null;
-        $view .= KecsoView::CarData();
+        $view .= KecsoView::CarData($carId,$uploadedFileName);
         $view .= IndexView::End();
 
        return $view;
     }
     public function carcost($param): string
    {
-      $view = IndexView::Begin();
+     $carId = isset($param) ? $param : null;
+      $view =Model::Init();
+      $view .= IndexView::Begin();
       $view .= IndexView::StartTitle('Javítási költségek');
-      $view.=Model::Init();
+      $view .= KecsoView::CarCost($carId);
+    
 
     
     // Űrlap megjelenítése
-      $view .= KecsoView::CarCost();
+   
       $view .= IndexView::End();
       if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addCarCost'])) 
       {
         $carCost = 
         [
-            'carId' => $_POST['carId'], // Az autó _id-je
+            'carId' =>$carId,  // Az autó _id-je
             'date' => new \MongoDB\BSON\UTCDateTime(strtotime($_POST['date']) * 1000),
             'part' => $_POST['part'],
             'price' => floatval($_POST['price'])
         ];
 
         // Hívás a Model-be, hogy hozzáadjuk az új költséget
-        $result = Model::InsertCarCost($_POST['carId'], $carCost);
+        $result = Model::InsertCarCost($carCost);
 
         if ($result) 
         {

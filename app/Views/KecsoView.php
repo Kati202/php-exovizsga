@@ -30,10 +30,10 @@ class KecsoView
        return $html;
     }
     //Kecso page
-    public static function CarData()
+    public static function CarData($carId,$uploadedFileName)
      {
         $html= '<form method="post" action="'.Config::KECSO_URL_CARDATA.'" enctype="multipart/form-data">';
-        $view .= '<input type="hidden" name="carId" value="' . $carId . '">';
+        $html .= '<input type="hidden" name="carId" value="' . htmlspecialchars($carId) . '">';
         $html .= self::CreateInput('Fálj neve', 'data');
         $html .= '<div>
                     <label for="file">Válassz egy fájlt:</label>
@@ -43,20 +43,23 @@ class KecsoView
         $html .= '</form>';
 
         // Feltöltött képek listázása
-        $html .= self::ListUploadedImages();
+        $html .= self::ListUploadedImages($uploadedFileName);
 
         return $html;
      }
     
-     public static function CarCost()
+     public static function CarCost($carId)
     { 
-        $html= '<form method="post" action="' . Config::KECSO_URL . '">';
-        $html .= self::CreateInput('Rendszám', 'license');
-        $html .= self::CreateInput('Időpont', 'date');
-        $html .= self::CreateInput('Alkatrész', 'part');
-        $html .= self::CreateInput('Ár', 'price');
+        
+        $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '?param=' . htmlspecialchars($carId) . '">';
+        $html .= '<input type="text" name="date" placeholder="Időpont">';
+        $html .= '<input type="text" name="part" placeholder="Alkatrész">';
+        $html .= '<input type="text" name="price" placeholder="Ár">';
         $html .= '<button type="submit" name="addCarCost">Költség hozzáadása</button>';
-        $html.= '</form>';
+        $html .= '</form>';
+
+        // Javítási költségek listázása
+        $html .= self::DisplayCarCosts($carId);
 
         return $html;
     }
@@ -104,21 +107,16 @@ class KecsoView
     }
     //Kecso page
    
-    private static function ListUploadedImages() 
+    private static function ListUploadedImages($uploadedFileName) 
     {
-        $images = Model::GetImages();
         $html = '<h2>Feltöltött képek:</h2>';
-    
-        if (!empty($images)) {
+
+        if (!empty($uploadedFileName)) {
             $html .= '<ul>';
-            foreach ($images as $image) {
-                $fileName = $image['file'];
-                $license = $image['data'];  // Itt változtatva "license"-ról "data"-ra
-                $html .= '<li>
-                            <p>Rendszám: ' . htmlspecialchars($license) . '</p>
-                            <img src="uploads/kecso/' . htmlspecialchars($fileName) . '" width="200" height="auto">
-                          </li>';
-            }
+            $html .= '<li>
+                        <p>Fájl neve: ' . htmlspecialchars($uploadedFileName) . '</p>
+                        <!-- További adatok megjelenítése, például feltöltés dátuma, stb. -->
+                    </li>';
             $html .= '</ul>';
         } else {
             $html .= '<p>Nincsenek feltöltött képek.</p>';
@@ -126,47 +124,45 @@ class KecsoView
     
         return $html;
     }
-private static function DisplayCarCosts()
+private static function DisplayCarCosts($carId)
 {
-    $carCosts = Model::GetCarCosts(); // Módosítani a model függvény nevét és paramétereit
+    $carCosts = Model::GetCarCosts($carId);
 
-    $html = '<h2>Javítási költségek:</h2>';
+        $html = '<h3>Rögzített javítási költségek:</h3>';
 
-    if (!empty($carCosts)) {
-        $html .= '<table border="1" cellpadding="10">
-                    <thead>
-                        <tr>
-                            <th>Rendszám</th>
-                            <th>Időpont</th>
-                            <th>Alkatrész</th>
-                            <th>Ár</th>
-                            <th>Műveletek</th>
-                        </tr>
-                    </thead>
-                    <tbody>';
+        if (!empty($carCosts)) {
+            $html .= '<table border="1" cellpadding="10">
+                        <thead>
+                            <tr>
+                                <th>Időpont</th>
+                                <th>Alkatrész</th>
+                                <th>Ár</th>
+                                <th>Műveletek</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
 
-        foreach ($carCosts as $cost) {
-            $html .= '<tr>
-                        <td>' . $cost['license'] . '</td>
-                        <td>' . $cost['date'] . '</td>
-                        <td>' . $cost['part'] . '</td>
-                        <td>' . $cost['price'] . '</td>
-                        <td>
-                            <form method="post" action="">
-                                <input type="hidden" name="deleteCostId" value="' . $cost['_id'] . '">
-                                <button type="submit" name="deleteCost">Törlés</button>
-                            </form>
-                        </td>
-                    </tr>';
+            foreach ($carCosts as $cost) {
+                $html .= '<tr>
+                            <td>' . date('Y-m-d H:i:s', $cost['date']->toDateTime()->getTimestamp()) . '</td>
+                            <td>' . $cost['part'] . '</td>
+                            <td>' . $cost['price'] . '</td>
+                            <td>
+                                <form method="post" action="">
+                                    <input type="hidden" name="deleteCostId" value="' . $cost['_id'] . '">
+                                    <button type="submit" name="deleteCost">Törlés</button>
+                                </form>
+                            </td>
+                        </tr>';
+            }
+
+            $html .= '</tbody></table>';
+        } else {
+            $html .= '<p>Nincsenek rögzített javítási költségek.</p>';
         }
 
-        $html .= '</tbody></table>';
-    } else {
-        $html .= '<p>Nincsenek rögzített javítási költségek.</p>';
+        return $html;
     }
-
-    return $html;
-}
 
 // ...
 
