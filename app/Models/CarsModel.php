@@ -5,7 +5,7 @@ use MongoDB\Client;
 use App\Config;
 use MongoDB\BSON\ObjectId;
 
-class Model
+class CarsModel
 {     
     private static $client;
     private static $db;

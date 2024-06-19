@@ -11,5 +11,14 @@ class Request
     {
         return isset($_POST['deleteCarId']);
     }
+    public static function CouriorsInsert()
+    {
+      return isset($_POST['ids']);
+      return isset($_POST['name']);
+    }
+    public static function CouriorsDelete()
+    {
+      return isset($_POST['deleteCouriorId']);
+    }
 }
 ?>

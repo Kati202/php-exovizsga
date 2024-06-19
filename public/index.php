@@ -16,11 +16,28 @@ $param = isset($_GET['param']) ? $_GET['param'] : '';
 switch ($page) {
     case 'kecso':
         $kecsoController = new Kecso();
-        if ($operation === 'cardata') {
+        if ($operation === 'cardata') 
+        {
             $response = $kecsoController->cardata($param);
-        } elseif ($operation === 'carcost') {
+        } 
+        elseif ($operation === 'carcost') 
+        {
             $response = $kecsoController->carcost($param);
-        } else {
+        } 
+        elseif ($operation === 'couriordata') 
+        {
+            $response = $kecsoController->couriordata($param);
+        } 
+        elseif ($operation === 'courioraddress') 
+        {
+            $response = $kecsoController->courioraddress($param);
+        } 
+        elseif ($operation === 'depo') 
+        {
+            $response = $kecsoController->depo($param);
+        } 
+        else 
+        {
             $response = $kecsoController->kecso();
         }
         break;

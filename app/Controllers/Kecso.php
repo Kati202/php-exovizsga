@@ -6,7 +6,9 @@ ini_set('display_errors', 'On');
 
 use App\Views\IndexView;
 use App\Views\KecsoView;
-use App\Models\Model;
+use App\Models\CarsModel;
+use App\Models\CouriorsModel;
+use App\Models\DeposModel;
 use App\Requests\Request;
 use App\Config;
 
@@ -19,30 +21,52 @@ class Kecso
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
 
-        // Adatbázis inicializálása
-        $view.=Model::Init();
+      
+        $view.=CarsModel::Init();
         // Új gépjármű hozzáadása
-         if (Request::CarsInsert()) {
+        if (Request::CarsInsert()) {
             $car = [
                 'license' => $_POST['license']
             ];
-            Model::InsertCar($car);
+            CarsModel::InsertCar($car);
             header("Location: " . $_SERVER['REQUEST_URI']); 
             exit();
         }
-
-        // Gépjármű törlése
+        //Gépjármű törlése
         if (isset($_POST['deleteCar'])) {
             $carId = $_POST['deleteCarId'];
-            Model::DeleteCar($carId);
+            CarsModel::DeleteCar($carId);
             header("Location: " . $_SERVER['REQUEST_URI']); 
             exit();
         }
+        $view.=KecsoView::ShowCar();
+        //
+        $view.=CouriorsModel::Init();
+        //Új futár hozzáadása
+        if (Request::CouriorsInsert()) {
+            $courior = 
+            [
+                'ids' => $_POST['ids'],
+                'name' => $_POST['name']
+            ];
+            CouriorsModel::InsertCouriors($courior);
+            header("Location: " . $_SERVER['REQUEST_URI']); 
+            exit();
+        }
+        //Futár törlése
+        if (isset($_POST['deleteCourior'])) {
+            $couriorId = $_POST['deleteCouriorId'];
+            CouriorsModel::DeleteCouriors($couriorId);
+            header("Location: " . $_SERVER['REQUEST_URI']); 
+            exit();
+        }
+       
 
-        // Főoldal megjelenítése
-        $view.=KecsoView::Show();
+        $view.=KecsoView::ShowCourior();
+        $view .= DeposModel::Init();
+        $view .= KecsoView::Depo();
 
-        // Oldalzárás
+        //Oldalzárás
         $view .= IndexView::End();
 
         return $view;
@@ -53,7 +77,7 @@ class Kecso
         $carId = isset($param) ? $param : null;
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Gépjármű adatai');
-        $view.=Model::Init();
+        $view.=CarsModel::Init();
        
         $uploadedFileName = '';
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) 
@@ -88,7 +112,7 @@ class Kecso
                             'data' => $_POST['data'],
                             'file' => $uploadedFileName
                         ];
-                        Model::InsertImage($carId,$imageData);
+                        CarsModel::InsertImage($carId,$imageData);
 
                         $view .= "A kép sikeresen feltöltve: " . htmlspecialchars($file['name']);
                     } 
@@ -115,7 +139,7 @@ class Kecso
         'uploadDate' => new \MongoDB\BSON\UTCDateTime(strtotime('now') * 1000)
     ];
 
-    Model::InsertImage($carId, $imageData);
+    CarsModel::InsertImage($carId, $imageData);
 
 
         // Kép feltöltés űrlap megjelenítése
@@ -125,10 +149,10 @@ class Kecso
 
        return $view;
     }
-    public function carcost($param): string
+ public function carcost($param): string
    {
      $carId = isset($param) ? $param : null;
-      $view =Model::Init();
+      $view = CarsModel::Init();
       $view .= IndexView::Begin();
       $view .= IndexView::StartTitle('Javítási költségek');
       $view .= KecsoView::CarCost($carId);
@@ -149,7 +173,7 @@ class Kecso
         ];
 
         // Hívás a Model-be, hogy hozzáadjuk az új költséget
-        $result = Model::InsertCarCost($carCost);
+        $result = CarsModel::InsertCarCost($carCost);
 
         if ($result) 
         {
@@ -162,6 +186,39 @@ class Kecso
     }
     return $view;
 }
+public function couriordata($param): string
+{
+    // Futár adatok kezelése itt
+    $view = IndexView::Begin();
+    $view .= IndexView::StartTitle('Futár adatai');
+    // Logika a futár adatok betöltéséhez
+    $view .= IndexView::End();
 
-    
+    return $view;
+}
+
+public function courioraddress($param): string
+{
+    // Futár cím kezelése itt
+    $view = IndexView::Begin();
+    $view .= IndexView::StartTitle('Futár címmennyisége');
+    // Logika a futár cím betöltéséhez
+    $view .= IndexView::End();
+
+    return $view;
+}
+public static function depo($param):string
+{
+        $depodata = DeposModel::GetDepoData();
+
+        $view = IndexView::OpenSection('Depó adatai');
+
+        foreach ($depodata as $data) {
+            $view .= '<p><strong>' . htmlspecialchars($data['title']) . '</strong>: ' . htmlspecialchars($data['content']) . '</p>';
+        }
+
+        $view .= IndexView::CloseSection();
+
+        return $view;
+}  
 }

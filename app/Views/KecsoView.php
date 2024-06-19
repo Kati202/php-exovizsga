@@ -1,13 +1,14 @@
 <?php
 namespace App\Views;
 
-use App\Models\Model;
+use App\Models\CarsModel;
+use App\Models\CouriorsModel;
 use App\Views\IndexView;
 use App\Config;
 
 class KecsoView
 {   //Kecso home
-    public static function Show()
+    public static function ShowCar()
     {
         IndexView::OpenSection('Gépjárművek');
         $html='';
@@ -29,6 +30,23 @@ class KecsoView
        $html.=IndexView::renderDeleteConfirmationForm(Config::KECSO_URL, $ids);
        return $html;
     }
+    public static function ShowCourior()
+    {
+        IndexView::OpenSection('Futárok');
+        $html='';
+
+        $html.= '<form method="post" action="' . Config::KECSO_URL . '">';
+        $html.= self::CreateInput('Azonosító', 'ids');
+        $html.= self::CreateInput('Futár neve', 'name');
+        $html.= '<button type="submit" name="newCourior">Futár hozzáadása</button>';
+        $html.= '</form>';
+
+        $html.= self::DisplayCouriors();
+
+        $html.=IndexView::CloseSection();
+        return $html;
+    }
+
     //Kecso page
     public static function CarData($carId,$uploadedFileName)
      {
@@ -48,7 +66,7 @@ class KecsoView
         return $html;
      }
     
-     public static function CarCost($carId)
+    public static function CarCost($carId)
     { 
         
         $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '?param=' . htmlspecialchars($carId) . '">';
@@ -63,8 +81,16 @@ class KecsoView
 
         return $html;
     }
-
-
+    public static function Depo()
+    {
+        IndexView::OpenSection('Depó adatok');
+        $html='';
+        $html='<a href="'.Config::KECSO_URL_DEPO.'">Depó adatai</a>';
+        
+        $html.=IndexView::CloseSection();
+        return $html;
+    }
+   
 
 
 
@@ -80,7 +106,7 @@ class KecsoView
     //Kecso home
     private static function DisplayCars()
     {
-        $cars = Model::GetCars();
+        $cars = CarsModel::GetCars();
         $html = '<table border="1" cellpadding="10" >
                     <thead>
                         <tr><th>Rendszám</th>
@@ -89,7 +115,8 @@ class KecsoView
                             <th>Műveletek</th></tr>
                     </thead>
                     <tbody>';
-        foreach ($cars as $car) {
+        foreach ($cars as $car) 
+        {
             $html .= '<tr>
                         <td>' . $car['license'] . '</td>
                         <td><a href="'.Config::KECSO_URL_CARDATA.'?operation=cardata&param=' . $car['_id'] .'">Gépjármű adatai</a></td>
@@ -98,6 +125,36 @@ class KecsoView
                             <form method="post" action="' . Config::KECSO_URL . '" style="display:inline;">
                                 <input type="hidden" name="deleteCarId" value="' . $car['_id'] . '">
                                 <button type="submit" name="deleteCar">Törlés</button>
+                            </form>
+                        </td>
+                      </tr>';
+        }
+        $html .= '</tbody></table>';
+        return $html;
+    }
+    
+    private static function DisplayCouriors()
+    {
+        $couriors = CouriorsModel::GetCouriors();
+        $html = '<table border="1" cellpadding="10" >
+                    <thead>
+                        <tr><th>Futár azonosító</th>
+                            <th>Futár neve</th>
+                            <th>Futár adatai</th>
+                            <th>Futár címmenyisége</th></tr>
+                    </thead>
+                    <tbody>';
+        foreach ($couriors as $courior) 
+        {
+            $html .= '<tr>
+                        <td>' . $courior['ids'] . '</td>
+                        <td>' . $courior['name'] .'</td>
+                        <td><a href="'.Config::KECSO_URL_COURIORDATA.'?operation=couriordata&param=' . $courior['_id'] .'">Személyes adatok</a></td>
+                        <td><a href="'.Config::KECSO_URL_COURIORADDRESS.'?operation=courioraddress&param=' . $courior['_id'] .'">Hónapos szétbontásban</a></td>
+                        <td>
+                            <form method="post" action="' . Config::KECSO_URL . '" style="display:inline;">
+                                <input type="hidden" name="deleteCouriorId" value="' . $courior['_id'] . '">
+                                <button type="submit" name="deleteCourior">Törlés</button>
                             </form>
                         </td>
                       </tr>';
@@ -124,9 +181,10 @@ class KecsoView
     
         return $html;
     }
-private static function DisplayCarCosts($carId)
-{
-    $carCosts = Model::GetCarCosts($carId);
+  
+     private static function DisplayCarCosts($carId)
+    {
+      $carCosts = CarsModel::GetCarCosts($carId);
 
         $html = '<h3>Rögzített javítási költségek:</h3>';
 
