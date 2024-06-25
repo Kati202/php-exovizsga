@@ -62,9 +62,8 @@ class Kecso
         }
        
 
-        $view.=KecsoView::ShowCourior();
-        $view .= DeposModel::Init();
-        $view .= KecsoView::Depo();
+        $view .=KecsoView::ShowCourior();
+        $view .=KecsoView::ShowDepoButton();
 
         //Oldalzárás
         $view .= IndexView::End();
@@ -209,16 +208,60 @@ public function courioraddress($param): string
 }
 public static function depo($param):string
 {
-        $depodata = DeposModel::GetDepoData();
+    $view = IndexView::Begin();
+    $view .= IndexView::OpenSection('Depó adatai');
+  
+    $editDepo=null;
 
-        $view = IndexView::OpenSection('Depó adatai');
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Depó szerkesztése
+        if (Request::DepoUpdate()) {
+            $editDepoId = $_POST['updateDepoId'];
+            $editDepo = DeposModel::GetDepoById($editDepoId);
+           
+        }
+       
 
-        foreach ($depodata as $data) {
-            $view .= '<p><strong>' . htmlspecialchars($data['title']) . '</strong>: ' . htmlspecialchars($data['content']) . '</p>';
+        if (Request::DepoSave()) {
+            $editDepoId = $_POST['editDepoId'];
+            $title = $_POST['title'] ?? '';
+            $content = $_POST['content'] ?? '';
+            if (!empty($editDepoId) && !empty($title) && !empty($content)) {
+                DeposModel::UpdateDepodata($editDepoId, ['title' => $title, 'content' => $content]);
+                // Mentés után ne legyen szerkesztési állapotban
+                $editDepo = null;
+            header("Location: " . Config::KECSO_URL_DEPO);
+                exit();
+            }
         }
 
-        $view .= IndexView::CloseSection();
+        // Új depó adat hozzáadása
+        if (Request::DepoInsert()) {
+            $title = $_POST['title'] ?? '';
+            $content = $_POST['content'] ?? '';
+            if (!empty($title) && !empty($content)) {
+                DeposModel::InsertDepodata(['title' => $title, 'content' => $content]);
+        
+            }
+        }
 
-        return $view;
+        // Depó adat törlése
+        if (Request::DepoDelete()) {
+            $deleteDepoId = $_POST['deleteDepoId'];
+            DeposModel::DeleteDepodata($deleteDepoId);
+        }
+      
+    }
+    
+    
+   
+   
+    $depodata = DeposModel::GetDepoData();
+    
+    
+    $view .= KecsoView::Depo($depodata,$editDepo);
+
+    $view .= IndexView::CloseSection();
+    return $view;
 }  
 }

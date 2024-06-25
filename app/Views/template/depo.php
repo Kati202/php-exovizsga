@@ -1,17 +1,28 @@
 <?php
 $data = [
-    ['title' => 'Címe', 'content' => 'Egy példa cím'],
-    ['title' => 'Területe', 'content' => '100 négyzetméter'],
-    ['title' => 'Futárok Száma', 'content' => '5'],
-    ['title' => 'Autók száma', 'content' => '3'],
-    
+    ['title' => 'Címe', 'content' => 'Kecskemét Matkói út 16'],
+    ['title' => 'Területe', 'content' => '300 négyzetméter'],
+    ['title' => 'Futárok Száma', 'content' => '16'],
+    ['title' => 'Autók száma', 'content' => '18'],
 ];
 
-echo '<ul>';
+$html = '<table border="1" cellpadding="10">';
 
+
+$html .= '<thead><tr>';
 foreach ($data as $item) {
-    echo '<li><strong>' . $item['title'] . '</strong>:' . $item['content'] . '</li>';
+    $html .= '<th>' . htmlspecialchars($item['title']) . '</th>';
 }
+$html .= '</tr></thead>';
 
-echo '</ul>';
+
+$html .= '<tbody><tr>';
+foreach ($data as $item) {
+    $html .= '<td>' . htmlspecialchars($item['content']) . '</td>';
+}
+$html .= '</tr></tbody>';
+
+$html .= '</table>';
+
+return $html;
 ?>

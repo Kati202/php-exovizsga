@@ -17,6 +17,10 @@ class IndexView
     {
         return self::loadView('template/end');
     }
+    public static function Depos()
+    {
+        return self::loadView('template/depo');
+    }
 
     public static function StartTitle($title) 
     {
@@ -24,19 +28,19 @@ class IndexView
     }
     public static function OpenSection($title)
 	{
-		echo '<section ><h3 class=>'. $title .'</h3>';
+		return '<section ><h3 class=>'. $title .'</h3>';
 	}
     public static function CloseSection()
 	{
-		echo '</section>';
+		return '</section>';
 	}
     public static function renderDeleteConfirmationForm($actionUrl, $ids)
     {
-        echo '<form method="post" action="' . $actionUrl . '">';
-        echo '<input type="hidden" name="deleteCarId" value="' . $ids . '">';
-        echo '<label>Biztosan törlöd?</label>';
-        echo '<button type="submit" name="confirmDelete">Igen, törlöm</button>';
-        echo '</form>';
+        return '<form method="post" action="' . $actionUrl . '">
+         <input type="hidden" name="deleteCarId" value="' . $ids . '">
+         <label>Biztosan törlöd?</label>
+         <button type="submit" name="confirmDelete">Igen, törlöm</button>
+         </form>';
     }
 
     private static function loadView($viewPath)
