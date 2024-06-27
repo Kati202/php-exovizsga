@@ -94,6 +94,20 @@ class KecsoView
 
         return $html;
     }
+    public static function Disp($dispdata,$editdisp=null)
+    {
+    $html = '';
+     
+    
+    $groupedData = self::GroupDataDisp($dispdata);
+   
+    foreach ($groupedData as $title => $items) {
+        $html .= self::DisplayDispGroup($title, $items, $editdisp);
+    }
+
+    $html .= self::CreateDispForm();
+    return $html;
+    }
 
     public static function ShowDepoButton()
    {
@@ -103,17 +117,25 @@ class KecsoView
 
     return $html;
    } 
+   public static function ShowDispButton()
+   {
+    $html = '<form method="post" action="' . Config::KECSO_URL_DISP. '">';
+    $html .= '<button type="submit" name="showDisp">Diszpécser elérhetőségek megtekintése</button>';
+    $html .= '</form>';
+
+    return $html;
+   }
    
 
 
 
 
     //Kecso home,page
-    private static function CreateInput($text, $car)
+    private static function CreateInput($text, $name)
     {
         return '<div>
-                    <label for="'. $car .'">'. $text .'</label>
-                    <input type="text" name="'. $car .'" id="'. $car .'">
+                    <label for="'. $name .'">'. $text .'</label>
+                    <input type="text" name="'. $name .'" id="'. $name .'">
                 </div>';
     }
     private static function CreateInputValue($label, $name, $value = '')
@@ -283,19 +305,114 @@ class KecsoView
 
         return $html;
    }
-
     
-    public static function DepoEdit($depo)
-    {
-        $html = '<form method="post" action="' . Config::KECSO_URL_DEPO .'">';
-        $html .= '<input type="hidden" name="editDepoId" value="' . $depo['_id'] . '">';
-        $html .= self::CreateInputValue('Kategória', 'title', $depo['title']);
-        $html .= self::CreateInputValue('Adat', 'content', $depo['content']);
-        $html .= '<button type="submit" name="saveDepo">Mentés</button>';
-        $html .= '</form>';
 
-        return $html;
+    private static function GroupDataDisp($dispdata)
+{
+    $groupedData = [];
+
+    foreach ($dispdata as $item) {
+        // Ellenőrizze, hogy a $item egy BSONDocument objektum
+        if ($item instanceof \MongoDB\Model\BSONDocument) 
+        {
+            $title = $item['title'] ;
+            $name = $item['name'] ;
+            $phone = $item['phone'] ;
+            $id = (string) $item['_id']; // Az ObjectId objektumot stringgé alakítjuk
+
+
+            // Csoportosítás feladatkör alapján
+            if (!isset($groupedData[$title])) 
+            {
+                $groupedData[$title] = [];
+            }
+            $groupedData[$title][] = 
+            [
+                'title' => $title,
+                'name'=>$name['name'] ?? 'Nincs megadva név',
+                'phone' => $item['phone'] ,
+                '_id' => $item['_id'], 
+            ];
+        }
     }
+
+    return $groupedData;
+}
+    
+  
+    private static function DisplayDispGroup($title, $items, $editdisp)
+{
+    $html = '<h2>' . htmlspecialchars($title) . '</h2>';
+   
+
+    // Táblázat létrehozása az adatok megjelenítéséhez
+    $html .= '<table border="1" cellpadding="10">
+                <thead>
+                <tr>
+                    <th>Név</th>
+                    <th>Munkaterület</th>
+                    <th>Telefonszám</th>
+                    <th>Műveletek</th>
+                </tr>
+                       
+                </thead>
+                <tbody>';
+
+    // Adatok megjelenítése a táblázatban
+    foreach ($items as $item) {
+        $html .= '<tr>
+                    <td>' . htmlspecialchars($item['name']) . '</td>
+                    <td>' . htmlspecialchars($item['title']) . '</td>
+                    <td>' . htmlspecialchars($item['phone']) . '</td>
+                    <td>
+                        <form method="post" action="' . Config::KECSO_URL_DISP . '" style="display:inline;">
+                            <input type="hidden" name="updateDispId" value="' . $item['_id'] . '">
+                            <button type="submit" name="updateDisp">Szerkesztés</button>
+                        </form>
+                        <form method="post" action="' . Config::KECSO_URL_DISP . '" style="display:inline;">
+                            <input type="hidden" name="deleteDispId" value="' . $item['_id'] . '">
+                            <button type="submit" name="deleteDisp">Törlés</button>
+                        </form>
+                    </td>
+                </tr>';
+
+        // Ha szerkesztés alatt van az adott elem, jelenítsük meg a szerkesztési űrlapot
+        if ($editdisp && $editdisp['_id'] == $item['_id']) {
+            $html .= '<tr><td colspan="3">' . self::DispEdit($editdisp) . '</td></tr>';
+        }
+    }
+
+    $html .= '</tbody></table>';
+
+    return $html;
+}
+
+// Űrlap létrehozása új depó adat hozzáadásához
+private static function CreateDispForm()
+{
+    $html = '<form method="post" action="' . Config::KECSO_URL_DISP . '">';
+    $html .= self::CreateInput('Név','name');
+    $html .= self::CreateInput('Munkaterület', 'title');
+    $html .= self::CreateInput('Telefonszám', 'phone');
+    $html .= '<button type="submit" name="newDisp">Diszpécser adat hozzáadása</button>';
+    $html .= '</form>';
+
+    return $html;
+}
+public static function DispEdit($editdisp)
+{
+    $html = '<form method="post" action="' . Config::KECSO_URL_DISP .'">';
+    $html .= '<input type="hidden" name="editDispId" value="' . $editdisp['_id'] . '">';
+    $html .= self::CreateInputValue('Név', 'name', $editdisp['name']);
+    $html .= self::CreateInputValue('Munkaterület', 'title', $editdisp['title']);
+    $html .= self::CreateInputValue('Telefonszám', 'phone', $editdisp['phone']);
+    $html .= '<button type="submit" name="saveDisp">Mentés</button>';
+    $html .= '</form>';
+
+    return $html;
+}
+
+
 
    
 }

@@ -36,6 +36,10 @@ switch ($page) {
         {
             $response = $kecsoController->depo($param);
         } 
+        elseif ($operation === 'disp') 
+        {
+            $response = $kecsoController->disp($param);
+        } 
         else 
         {
             $response = $kecsoController->kecso();

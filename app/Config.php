@@ -14,6 +14,7 @@ class Config
     public const KECSO_URL_COURIORDATA = self::BASE_URL . 'kecso/couriordata';
     public const KECSO_URL_COURIORADDRESS = self::BASE_URL . 'kecso/courioraddress';
     public const KECSO_URL_DEPO = self::BASE_URL . 'kecso/depo';
+    public const KECSO_URL_DISP = self::BASE_URL . 'kecso/disp';
 
     public const TATA_URL = self::BASE_URL . 'tata';
     public const HALAS_URL = self::BASE_URL . 'halas';

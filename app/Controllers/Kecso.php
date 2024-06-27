@@ -9,6 +9,7 @@ use App\Views\KecsoView;
 use App\Models\CarsModel;
 use App\Models\CouriorsModel;
 use App\Models\DeposModel;
+use App\Models\DispModel;
 use App\Requests\Request;
 use App\Config;
 
@@ -64,6 +65,7 @@ class Kecso
 
         $view .=KecsoView::ShowCourior();
         $view .=KecsoView::ShowDepoButton();
+        $view .=KecsoView::ShowDispButton();
 
         //Oldalzárás
         $view .= IndexView::End();
@@ -213,55 +215,103 @@ public static function depo($param):string
   
     $editDepo=null;
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') 
+    {
         // Depó szerkesztése
-        if (Request::DepoUpdate()) {
+        if (Request::DepoUpdate()) 
+        {
             $editDepoId = $_POST['updateDepoId'];
             $editDepo = DeposModel::GetDepoById($editDepoId);
-           
         }
-       
-
-        if (Request::DepoSave()) {
+       if (Request::DepoSave()) 
+        {
             $editDepoId = $_POST['editDepoId'];
             $title = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
-            if (!empty($editDepoId) && !empty($title) && !empty($content)) {
+            if (!empty($editDepoId) && !empty($title) && !empty($content)) 
+            {
                 DeposModel::UpdateDepodata($editDepoId, ['title' => $title, 'content' => $content]);
                 // Mentés után ne legyen szerkesztési állapotban
                 $editDepo = null;
-            header("Location: " . Config::KECSO_URL_DEPO);
+                header("Location: " . Config::KECSO_URL_DEPO);
                 exit();
             }
         }
-
         // Új depó adat hozzáadása
-        if (Request::DepoInsert()) {
+        if (Request::DepoInsert()) 
+        {
             $title = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
-            if (!empty($title) && !empty($content)) {
+            if (!empty($title) && !empty($content)) 
+            {
                 DeposModel::InsertDepodata(['title' => $title, 'content' => $content]);
         
             }
         }
-
         // Depó adat törlése
-        if (Request::DepoDelete()) {
+        if (Request::DepoDelete()) 
+        {
             $deleteDepoId = $_POST['deleteDepoId'];
             DeposModel::DeleteDepodata($deleteDepoId);
         }
-      
     }
-    
-    
-   
-   
     $depodata = DeposModel::GetDepoData();
-    
-    
     $view .= KecsoView::Depo($depodata,$editDepo);
-
     $view .= IndexView::CloseSection();
     return $view;
 }  
+  public static function disp($param):string
+{
+    $view = IndexView::Begin();
+    $view .= IndexView::OpenSection('Diszpécserek elérhetőségei');
+    $dispdata = DispModel::GetDispdata(); 
+    $editdisp = null; 
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (Request::DispInsert()) {
+            $name = $_POST['name'] ?? '';
+            $title = $_POST['title'] ?? '';
+            $phone = $_POST['phone'] ?? '';
+            if (!empty($name) && !empty($title) && !empty($phone)) {
+                DispModel::InsertDispdata(['name' => $name, 'title' => $title, 'phone' => $phone]);
+                header("Location: " . Config::KECSO_URL_DISP);
+                exit();
+            }
+            
+        }
+
+        if (Request::DispSave()) {
+            $editDispId = $_POST['editDispId'];
+            $name = $_POST['name'] ?? '';
+            $title = $_POST['title'] ?? '';
+            $phone = $_POST['phone'] ?? '';
+            if (!empty($editDispId) && !empty($name) && !empty($title) && !empty($phone)) {
+                DispModel::UpdateDispdata($editDispId, ['name' => $name, 'title' => $title, 'phone' => $phone]);
+                header("Location: " . Config::KECSO_URL_DISP);
+                exit();
+            }
+        }
+
+        if (Request::DispDelete()) {
+            $deleteDispId = $_POST['deleteDispId'];
+            DispModel::DeleteDispdata($deleteDispId);
+            header("Location: " . Config::KECSO_URL_DISP);
+            exit();
+        }
+
+        if (Request::DispUpdate()) {
+            $editDispId = $_POST['updateDispId'] ?? '';
+            
+            if (!empty($editDispId)) {
+                
+                $editdisp = DispModel::GetDispById($editDispId);
+            }
+        }
+    }
+
+    $view .= KecsoView::Disp($dispdata,$editdisp);
+    $view .= IndexView::CloseSection();
+    return $view;
+} 
 }
+

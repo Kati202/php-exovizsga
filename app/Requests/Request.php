@@ -45,5 +45,30 @@ class Request
     {
         return isset($_POST['updateDepoId'], $_POST['updateDepo']);
     }
+    public static function DispInsert()
+    {
+        return isset($_POST['name']) && isset($_POST['title']) && isset($_POST['phone']) && isset($_POST['newDisp']);
+    }
+
+    public static function DispSave()
+    {
+        return isset($_POST['editDispId'], $_POST['name'], $_POST['title'], $_POST['phone'], $_POST['saveDisp']);
+    }
+
+    public static function DispEdit()
+    {
+        return isset($_POST['editDispId'], $_POST['saveDisp']);
+    }
+
+    public static function DispDelete()
+    {
+        return isset($_POST['deleteDispId']);
+    }
+
+    public static function DispUpdate()
+    {
+        return isset($_POST['updateDispId'], $_POST['updateDisp']);
+    }
+
 }
 ?>
