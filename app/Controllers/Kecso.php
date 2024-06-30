@@ -159,7 +159,7 @@ class Kecso
       $view = CarsModel::Init();
       $view .= IndexView::Begin();
       $view .= IndexView::StartTitle('Javítási költségek');
-      $view .= KecsoView::CarCost($carId);
+      $view .= KecsoCarView::CarCost($carId);
     
 
     
@@ -190,16 +190,65 @@ class Kecso
     }
     return $view;
 }
-public function couriordata($param): string
+/*public function couriordata($param): string
 {
     // Futár adatok kezelése itt
     $view = IndexView::Begin();
     $view .= IndexView::StartTitle('Futár adatai');
-    // Logika a futár adatok betöltéséhez
+    $view = IndexView::Begin();
+    $view .= IndexView::OpenSection('Depó adatai');
+  
+    $editcourior=null;
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') 
+    {
+        // Depó szerkesztése
+        if (Request::UpdateCouriordata()) 
+        {
+            $editcouriorId = $_POST['updatecouriorId'];
+            $editDepo = DeposModel::GetDepoById($editDepoId);
+        }
+       if (Request::DepoSave()) 
+        {
+            $editDepoId = $_POST['editDepoId'];
+            $title = $_POST['title'] ?? '';
+            $content = $_POST['content'] ?? '';
+            if (!empty($editDepoId) && !empty($title) && !empty($content)) 
+            {
+                DeposModel::UpdateDepodata($editDepoId, ['title' => $title, 'content' => $content]);
+                // Mentés után ne legyen szerkesztési állapotban
+                $editDepo = null;
+                header("Location: " . Config::KECSO_URL_DEPO);
+                exit();
+            }
+        }
+        // Új depó adat hozzáadása
+        if (Request::DepoInsert()) 
+        {
+            $title = $_POST['title'] ?? '';
+            $content = $_POST['content'] ?? '';
+            if (!empty($title) && !empty($content)) 
+            {
+                DeposModel::InsertDepodata(['title' => $title, 'content' => $content]);
+        
+            }
+        }
+        // Depó adat törlése
+        if (Request::DepoDelete()) 
+        {
+            $deleteDepoId = $_POST['deleteDepoId'];
+            DeposModel::DeleteDepodata($deleteDepoId);
+        }
+    }
+    $depodata = DeposModel::GetDepoData();
+    $view .= KecsoDepoView::Depo($depodata,$editDepo);
+    $view .= IndexView::CloseSection();
+    return $view;
+}  
     $view .= IndexView::End();
 
     return $view;
-}
+}*/
 
 public function courioraddress($param): string
 {

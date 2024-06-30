@@ -27,7 +27,7 @@ public static function CarData($carId,$uploadedFileName)
     {
        $html= '<form method="post" action="'.Config::KECSO_URL_CARDATA.'" enctype="multipart/form-data">';
        $html .= '<input type="hidden" name="carId" value="' . htmlspecialchars($carId) . '">';
-       $html .= Index::CreateInput('Fálj neve', 'data');
+       $html .= IndexView::CreateInput('Fálj neve', 'data');
        $html .= '<div>
                    <label for="file">Válassz egy fájlt:</label>
                    <input type="file" name="file" id="file">

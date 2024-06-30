@@ -54,6 +54,34 @@ class CouriorsModel
        $filter = ['_id' => $id];
        return $filter;
    }
+  public static function InsertCouriordata($data)
+   {
+       self::Init(); 
+       $collection = self::$db->selectCollection('kecsocourior');
+       return $collection->insertOne($data);
+   }
+  public static function GetCouriorData()
+   {
+       self::Init(); 
+       $collection = self::$db->selectCollection('kecsocourior');
+       $list = $collection->find([], ['projection' => ['title' => 1, 'content' => 1]]);
+       return $list->toArray();
+   }
+
+   public static function DeleteCouriordata($id)
+   {
+       self::Init(); 
+       $collection = self::$db->selectCollection('kecsocourior');
+       $result = $collection->deleteOne(['_id' => new \MongoDB\BSON\ObjectId($id)]);
+       return $result->getDeletedCount();
+   }
+   public static function UpdateCouriordata($id, $data)
+   {
+       self::Init();
+       $collection = self::$db->selectCollection('kecsocourior');
+       $result = $collection->updateOne(['_id' => new \MongoDB\BSON\ObjectId($id)], ['$set' => $data]);
+       return $result->getModifiedCount();
+   }
 
 	
 }
