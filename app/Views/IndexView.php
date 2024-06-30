@@ -1,5 +1,6 @@
 <?php
 namespace App\Views;
+use App\Config;
 
 class IndexView
 {
@@ -41,6 +42,36 @@ class IndexView
          <label>Biztosan törlöd?</label>
          <button type="submit" name="confirmDelete">Igen, törlöm</button>
          </form>';
+    }
+    public static function CreateInput($text, $name)
+    {
+        return '<div>
+                    <label for="'. $name .'">'. $text .'</label>
+                    <input type="text" name="'. $name .'" id="'. $name .'">
+                </div>';
+    }
+    public static function CreateInputValue($label, $name, $value = '')
+    {
+        return '<div>
+                    <label for="' . $name . '">' . $label . '</label>
+                    <input type="text" name="' . $name . '" id="' . $name . '" value="' . htmlspecialchars($value) . '">
+                </div>';
+    }
+    public static function ShowDepoButton()
+    {
+     $html = '<form method="post" action="' . Config::KECSO_URL_DEPO . '">';
+     $html .= '<button type="submit" name="showDepo">Depó adatok megtekintése</button>';
+     $html .= '</form>';
+ 
+     return $html;
+    } 
+    public static function ShowDispButton()
+    {
+     $html = '<form method="post" action="' . Config::KECSO_URL_DISP. '">';
+     $html .= '<button type="submit" name="showDisp">Diszpécser elérhetőségek megtekintése</button>';
+     $html .= '</form>';
+ 
+     return $html;
     }
 
     private static function loadView($viewPath)

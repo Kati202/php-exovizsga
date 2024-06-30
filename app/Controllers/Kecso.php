@@ -5,11 +5,14 @@ error_reporting(E_ALL);
 ini_set('display_errors', 'On');
 
 use App\Views\IndexView;
-use App\Views\KecsoView;
-use App\Models\CarsModel;
-use App\Models\CouriorsModel;
-use App\Models\DeposModel;
-use App\Models\DispModel;
+use App\Views\KecsoView\KecsoCarView;
+use App\Views\KecsoView\KecsoCouriorView;
+use App\Views\KecsoView\KecsoDepoView;
+use App\Views\KecsoView\KecsoDispView;
+use App\Models\KecsoModel\CarsModel;
+use App\Models\KecsoModel\CouriorsModel;
+use App\Models\KecsoModel\DeposModel;
+use App\Models\KecsoModel\DispModel;
 use App\Requests\Request;
 use App\Config;
 
@@ -40,7 +43,7 @@ class Kecso
             header("Location: " . $_SERVER['REQUEST_URI']); 
             exit();
         }
-        $view.=KecsoView::ShowCar();
+        $view.=KecsoCarView::ShowCar();
         //
         $view.=CouriorsModel::Init();
         //Új futár hozzáadása
@@ -63,9 +66,9 @@ class Kecso
         }
        
 
-        $view .=KecsoView::ShowCourior();
-        $view .=KecsoView::ShowDepoButton();
-        $view .=KecsoView::ShowDispButton();
+        $view .=KecsoCouriorView::ShowCourior();
+        $view .=IndexView::ShowDepoButton();
+        $view .=IndexView::ShowDispButton();
 
         //Oldalzárás
         $view .= IndexView::End();
@@ -145,7 +148,7 @@ class Kecso
 
         // Kép feltöltés űrlap megjelenítése
         $carId = isset($_GET['param']) ? $_GET['param'] : null;
-        $view .= KecsoView::CarData($carId,$uploadedFileName);
+        $view .= KecsoCarView::CarData($carId,$uploadedFileName);
         $view .= IndexView::End();
 
        return $view;
@@ -256,7 +259,7 @@ public static function depo($param):string
         }
     }
     $depodata = DeposModel::GetDepoData();
-    $view .= KecsoView::Depo($depodata,$editDepo);
+    $view .= KecsoDepoView::Depo($depodata,$editDepo);
     $view .= IndexView::CloseSection();
     return $view;
 }  
@@ -309,7 +312,7 @@ public static function depo($param):string
         }
     }
 
-    $view .= KecsoView::Disp($dispdata,$editdisp);
+    $view .= KecsoDispView::Disp($dispdata,$editdisp);
     $view .= IndexView::CloseSection();
     return $view;
 } 

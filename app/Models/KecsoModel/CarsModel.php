@@ -1,5 +1,6 @@
 <?php
-namespace App\Models;
+namespace App\Models\KecsoModel;
+
 use App\Requests\Request;
 use MongoDB\Client;
 use App\Config;

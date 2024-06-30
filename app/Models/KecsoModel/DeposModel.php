@@ -1,10 +1,10 @@
 <?php
-namespace App\Models;
+namespace App\Models\KecsoModel;
 
 use MongoDB\Client;
 use MongoDB\Database;
 
-class DispModel
+class DeposModel
 {
     private static $db;
 
@@ -15,40 +15,38 @@ class DispModel
         self::$db = $client->selectDatabase('exovizsga');
     }
 
-    public static function InsertDispdata($data)
+    public static function InsertDepodata($data)
     {
-        self::Init();
-        $collection = self::$db->selectCollection('kecsodisp');
+        self::Init(); 
+        $collection = self::$db->selectCollection('kecsodepo');
         return $collection->insertOne($data);
     }
-
-    public static function GetDispById($id)
+    public static function GetDepoById($id)
     {
-        self::Init();
-        $collection = self::$db->selectCollection('kecsodisp');
+        self::Init(); 
+        $collection = self::$db->selectCollection('kecsodepo');
         return $collection->findOne(['_id' => new \MongoDB\BSON\ObjectId($id)]);
     }
 
-    public static function GetDispData()
+    public static function GetDepoData()
     {
-        self::Init();
-        $collection = self::$db->selectCollection('kecsodisp');
-        $list = $collection->find([], ['projection' => ['name' => 1, 'title' => 1, 'phone' => 1]]);
+        self::Init(); 
+        $collection = self::$db->selectCollection('kecsodepo');
+        $list = $collection->find([], ['projection' => ['title' => 1, 'content' => 1]]);
         return $list->toArray();
     }
 
-    public static function DeleteDispdata($id)
+    public static function DeleteDepodata($id)
     {
-        self::Init();
-        $collection = self::$db->selectCollection('kecsodisp');
+        self::Init(); 
+        $collection = self::$db->selectCollection('kecsodepo');
         $result = $collection->deleteOne(['_id' => new \MongoDB\BSON\ObjectId($id)]);
         return $result->getDeletedCount();
     }
-
-    public static function UpdateDispdata($id, $data)
+    public static function UpdateDepodata($id, $data)
     {
         self::Init();
-        $collection = self::$db->selectCollection('kecsodisp');
+        $collection = self::$db->selectCollection('kecsodepo');
         $result = $collection->updateOne(['_id' => new \MongoDB\BSON\ObjectId($id)], ['$set' => $data]);
         return $result->getModifiedCount();
     }
