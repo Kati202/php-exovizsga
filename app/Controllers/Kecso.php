@@ -44,10 +44,11 @@ class Kecso
             exit();
         }
         $view.=KecsoCarView::ShowCar();
-        //
+       
+        
         $view.=CouriorsModel::Init();
         //Új futár hozzáadása
-        if (Request::CouriorsInsert()) {
+        if (Request::CouriorInsert()) {
             $courior = 
             [
                 'ids' => $_POST['ids'],
@@ -190,76 +191,162 @@ class Kecso
     }
     return $view;
 }
-/*public function couriordata($param): string
+public function couriorData($param): string
 {
-    // Futár adatok kezelése itt
     $view = IndexView::Begin();
-    $view .= IndexView::StartTitle('Futár adatai');
-    $view = IndexView::Begin();
-    $view .= IndexView::OpenSection('Depó adatai');
-  
-    $editcourior=null;
+    $view .= IndexView::OpenSection('Futár adatai');
+    $view .= CouriorsModel::Init();
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') 
-    {
-        // Depó szerkesztése
-        if (Request::UpdateCouriordata()) 
-        {
-            $editcouriorId = $_POST['updatecouriorId'];
-            $editDepo = DeposModel::GetDepoById($editDepoId);
+    $editCourior = null;
+    $error='';
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Futár szerkesztése    
+        if (Request::CouriorUpdate()) {
+            $editCouriorId = $_POST['updateCouriorId'] ?? null;
+            if ($editCouriorId) {
+                $editCourior = CouriorsModel::GetCouriorDataById($editCouriorId);
+            }
         }
-       if (Request::DepoSave()) 
-        {
-            $editDepoId = $_POST['editDepoId'];
-            $title = $_POST['title'] ?? '';
-            $content = $_POST['content'] ?? '';
-            if (!empty($editDepoId) && !empty($title) && !empty($content)) 
+
+    // Futár mentése
+        if (Request::CouriorSave()) {
+            $editCouriorId = $_POST['editCouriorId'] ?? null;
+            $name = $_POST['name'] ?? '';
+            $date = $_POST['date'] ?? '';
+            $dateaddress = $_POST['dateaddress'] ?? '';
+            $age = $_POST['age'] ?? '';
+            $address = $_POST['address'] ?? '';
+            $mothername = $_POST['mothername'] ?? '';
+    // Ellenőrzés, hogy minden mező ki legyen töltve
+            if (!empty($editCouriorId) && !empty($name) && !empty($date) && !empty($dateaddress) && !empty($age) && !empty($address) && !empty($mothername)) 
             {
-                DeposModel::UpdateDepodata($editDepoId, ['title' => $title, 'content' => $content]);
-                // Mentés után ne legyen szerkesztési állapotban
-                $editDepo = null;
-                header("Location: " . Config::KECSO_URL_DEPO);
+                CouriorsModel::UpdateCouriordata($editCouriorId, [
+                    'name' => $name,
+                    'date' => $date,
+                    'dateaddress' => $dateaddress,
+                    'age' => $age,
+                    'address' => $address,
+                    'mothername' => $mothername
+                ]);
+            
+                $editCourior = null;
+                header("Location: " . Config::KECSO_URL_COURIORDATA);
+                exit();
+            }
+            
+        }
+
+    // Új futár hozzáadása  
+        if (Request::CouriorsInsert()) {
+            $name = $_POST['name'] ?? '';
+            $date = $_POST['date'] ?? '';
+            $dateaddress = $_POST['dateaddress'] ?? '';
+            $age = $_POST['age'] ?? '';
+            $address = $_POST['address'] ?? '';
+            $mothername = $_POST['mothername'] ?? '';
+    // Ellenőrzés, hogy minden mező ki legyen töltve
+            if (!empty($name) && !empty($date) && !empty($dateaddress) && !empty($age) && !empty($address) && !empty($mothername)) {
+                CouriorsModel::InsertCouriordata([
+                    'name' => $name,
+                    'date' => $date,
+                    'dateaddress' => $dateaddress,
+                    'age' => $age,
+                    'address' => $address,
+                    'mothername' => $mothername
+                ]);
+    // Visszatérés az eredeti oldalra
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
+            } 
+           
+        }
+
+    // Futár törlése  
+        if (Request::CouriorDelete()) {
+            $deleteCouriorId = $_POST['deleteCouriorId'] ?? null;
+            if ($deleteCouriorId) 
+            {
+    // Futár törlése az adatbázisból
+                CouriorsModel::DeleteCouriordata($deleteCouriorId);
+                header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
             }
         }
-        // Új depó adat hozzáadása
-        if (Request::DepoInsert()) 
-        {
-            $title = $_POST['title'] ?? '';
-            $content = $_POST['content'] ?? '';
-            if (!empty($title) && !empty($content)) 
-            {
-                DeposModel::InsertDepodata(['title' => $title, 'content' => $content]);
-        
-            }
-        }
-        // Depó adat törlése
-        if (Request::DepoDelete()) 
-        {
-            $deleteDepoId = $_POST['deleteDepoId'];
-            DeposModel::DeleteDepodata($deleteDepoId);
-        }
     }
-    $depodata = DeposModel::GetDepoData();
-    $view .= KecsoDepoView::Depo($depodata,$editDepo);
+    // Futárok adatainak lekérése az adatbázisból
+    $couriorData = CouriorsModel::GetCouriorData();
+    $view .= KecsoCouriorView::CouriorData($couriorData, $editCourior);
     $view .= IndexView::CloseSection();
-    return $view;
-}  
     $view .= IndexView::End();
-
+    
+    if (isset($error) && !empty($error)) {
+        $view .= $error;
+    }
     return $view;
-}*/
+}
+
+
+
+
 
 public function courioraddress($param): string
 {
     // Futár cím kezelése itt
+    /*úgy mint a dispet majd a hónap lesz group szempont csak a sorok száma(napok száma),név,időpont hónap,nap össz cím amivel kiment,leadott cím,véglegvissza,élővissza*/
+    
     $view = IndexView::Begin();
-    $view .= IndexView::StartTitle('Futár címmennyisége');
-    // Logika a futár cím betöltéséhez
+    $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
+
+    // Futár cím kezelése
+    if (Request::AddressInsert()) {
+        $address = [
+            'day' => $_POST['day'],
+            'month' => $_POST['month'],
+            'time' => $_POST['time'],
+            'total_addresses' => $_POST['total_addresses'],
+            'delivered_addresses' => $_POST['delivered_addresses'],
+            'final_return' => $_POST['final_return'],
+            'live_return' => $_POST['live_return']
+        ];
+        CouriorsModel::InsertAddress($address);
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+
+    if (Request::AddressDelete()) {
+        $addressId = $_POST['deleteAddressId'];
+        CouriorsModel::DeleteAddress($addressId);
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+
+    if (Request::AddressUpdate()) {
+        $editaddress = CouriorsModel::GetAddressById($_POST['updateAddressId']);
+    }
+
+    if (Request::AddressSave()) {
+            $address = [
+                'day' => $_POST['day'],
+                'month' => $_POST['month'],
+                'time' => $_POST['time'],
+                'total_addresses' => $_POST['total_addresses'],
+                'delivered_addresses' => $_POST['delivered_addresses'],
+                'final_return' => $_POST['final_return'],
+                'live_return' => $_POST['live_return']
+            ];
+        CouriorsModel::UpdateAddress($_POST['editAddressId'], $address);
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit();
+    }
+
+    $addresses = CouriorsModel::GetAddresses();
+    $view .= KecsoCouriorView::CouriorsAddress($addresses, $editaddress ?? null);
     $view .= IndexView::End();
 
     return $view;
 }
+
 public static function depo($param):string
 {
     $view = IndexView::Begin();

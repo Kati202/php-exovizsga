@@ -16,27 +16,58 @@ class Request
 
 
     //Couriors
-    public static function CouriorsInsert()
+    public static function CouriorInsert()
     {
-      return isset($_POST['name']) && isset($_POST['date']) && isset($_POST['dateaddress']) && isset($_POST['age']) && isset($_POST['address']) && isset($_POST['mothername']);
+        return isset($_POST['ids'], $_POST['name'], $_POST['newCourior']);
     }
-   
+    
+    
     public static function CouriorSave()
     {
-        return isset($_POST['editcouriorId'], $_POST['name'], $_POST['date'], $_POST['dateaddress'], $_POST['age'], $_POST['address'], $_POST['mothername'], $_POST['savecourior']);
+        return isset($_POST['editCouriorId'],$_POST['saveCouriordata'], $_POST['name'], $_POST['date'], $_POST['dateaddress'], $_POST['age'], $_POST['address'], $_POST['mothername']);
     }
+    
     public static function CouriorEdit()
     {
-      return isset($_POST['editcouriorId'], $_POST['savecourior']);
+        return isset($_POST['editCouriorId'], $_POST['saveCouriordata']);
     }
-
+    
     public static function CouriorDelete()
     {
-        return isset($_POST['deletecouriorId']);
+        return isset($_POST['deleteCouriorId'], $_POST['deleteCourior']);
     }
+    
     public static function CouriorUpdate()
     {
-        return isset($_POST['updatecouriorId'], $_POST['updatecourior']);
+        return isset($_POST['updateCouriorId'], $_POST['updateCourior']);
+    }
+    
+    public static function CouriorsInsert()
+    {
+        return isset($_POST['name'], $_POST['date'], $_POST['dateaddress'], $_POST['age'], $_POST['address'], $_POST['mothername'], $_POST['newCouriors']);
+    }
+    public static function AddressInsert()
+    {
+        return isset($_POST['day']) && isset($_POST['month']) && isset($_POST['time']) &&
+               isset($_POST['total_addresses']) && isset($_POST['delivered_addresses']) &&
+               isset($_POST['final_return']) && isset($_POST['live_return']) && isset($_POST['newAddress']);
+    }
+    public static function AddressDelete()
+    {
+        return isset($_POST['deleteAddressId']) && isset($_POST['deleteAddress']);
+    }
+
+    public static function AddressUpdate()
+    {
+        return isset($_POST['updateAddressId']) && isset($_POST['updateAddress']);
+    }
+
+    public static function AddressSave()
+    {
+        return isset($_POST['editAddressId']) && isset($_POST['saveAddress']) &&
+               isset($_POST['day']) && isset($_POST['month']) && isset($_POST['time']) &&
+               isset($_POST['total_addresses']) && isset($_POST['delivered_addresses']) &&
+               isset($_POST['final_return']) && isset($_POST['live_return']);
     }
   
     //Depos

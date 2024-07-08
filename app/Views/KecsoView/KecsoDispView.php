@@ -22,36 +22,7 @@ public static function Disp($dispdata,$editdisp=null)
     $html .= self::CreateDispForm();
     return $html;
   }
-  private static function DisplayCouriors()
-    {
-        $couriors = CouriorsModel::GetCouriors();
-        $html = '<table border="1" cellpadding="10" >
-                    <thead>
-                        <tr><th>Futár azonosító</th>
-                            <th>Futár neve</th>
-                            <th>Futár adatai</th>
-                            <th>Futár címmenyisége</th></tr>
-                    </thead>
-                    <tbody>';
-        foreach ($couriors as $courior) 
-        {
-            $html .= '<tr>
-                        <td>' . $courior['ids'] . '</td>
-                        <td>' . $courior['name'] .'</td>
-                        <td><a href="'.Config::KECSO_URL_COURIORDATA.'?operation=couriordata&param=' . $courior['_id'] .'">Személyes adatok</a></td>
-                        <td><a href="'.Config::KECSO_URL_COURIORADDRESS.'?operation=courioraddress&param=' . $courior['_id'] .'">Hónapos szétbontásban</a></td>
-                        <td>
-                            <form method="post" action="' . Config::KECSO_URL . '" style="display:inline;">
-                                <input type="hidden" name="deleteCouriorId" value="' . $courior['_id'] . '">
-                                <button type="submit" name="deleteCourior">Törlés</button>
-                            </form>
-                        </td>
-                      </tr>';
-        }
-        $html .= '</tbody></table>';
-        return $html;
-    }
-    private static function GroupDataDisp($dispdata)
+ private static function GroupDataDisp($dispdata)
     {
         $groupedData = [];
     
