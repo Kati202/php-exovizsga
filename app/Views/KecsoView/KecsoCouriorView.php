@@ -25,7 +25,8 @@ class KecsoCouriorView
     }
 public static function CouriorData($couriordata,$editcourior=null)
     {
-        $html = '<form method="post" action="' . Config::KECSO_URL_COURIORDATA  .'">';
+        
+        $html = '<form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $couriordata['_id'] . '">';
         $html .= IndexView::CreateInput('Neve', 'name');
         $html .= IndexView::CreateInput('Születési ideje', 'date');
         $html .= IndexView::CreateInput('Születési helye', 'dateaddress');
@@ -75,26 +76,49 @@ private static function DisplayCouriorData($couriordata,$editcourior=null)
                             </tr>
                         </thead>
                         <tbody>';
-
+                        
                         foreach ($couriordata as $courior) {
-                            $html .= '<tr>
-                                        <td>' . htmlspecialchars(isset($courior['name']) ? $courior['name'] : '') . '</td>
-                                        <td>' . htmlspecialchars(isset($courior['date']) ? $courior['date'] : '') . '</td>
-                                        <td>' . htmlspecialchars(isset($courior['dateaddress']) ? $courior['dateaddress'] : '') . '</td>
-                                        <td>' . htmlspecialchars(isset($courior['age']) ? $courior['age'] : '') . '</td>
-                                        <td>' . htmlspecialchars(isset($courior['address']) ? $courior['address'] : '') . '</td>
-                                        <td>' . htmlspecialchars(isset($courior['mothername']) ? $courior['mothername'] : '') . '</td>
-                                        <td>
-                                             <form method="post" action="' . Config::KECSO_URL_COURIORDATA. '" style="display:inline;">
-                                                 <input type="hidden" name="updateCouriorId" value="' . $courior['_id'] . '">
-                                                 <button type="submit" name="updateCourior">Szerkesztés</button>
-                                             </form>
-                                             <form method="post" action="' . Config::KECSO_URL_COURIORDATA. '" style="display:inline;">
-                                                <input type="hidden" name="deleteCouriorId" value="' . $courior['_id'] . '">
-                                                <button type="submit" name="deleteCourior">Törlés</button>
-                                             </form>
-                                        </td>
-                                      </tr>';
+                           
+                         
+                            
+                              
+
+                                // Check if $courior has an 'oid' property
+                                if (property_exists($courior, 'oid')) {
+                                    $objectId = $courior->oid;
+                                } else {
+                                    // Handle nested or alternative structure if 'oid' is not a direct property
+                                    // For example, if it is stored under another property or array
+                                    // Adjust this section based on actual structure, e.g., if stored under $courior->_id
+                                    if (property_exists($courior, '_id')) {
+                                        $objectId = $courior->_id;
+                                    } else {
+                                        // Fallback in case we cannot find the ObjectId
+                                        $objectId = null;
+                                    }
+                                }
+                        
+                                // Extract ObjectId as a string if it exists
+                                $objectIdStr = $objectId ? (method_exists($objectId, '__toString') ? (string)$objectId : (string)$objectId->jsonSerialize()) : '';
+                                $html .= '<tr>
+                                            <td>' . htmlspecialchars(isset($courior->name) ? $courior->name : '') . '</td>
+                                            <td>' . htmlspecialchars(isset($courior->date) ? $courior->date : '') . '</td>
+                                            <td>' . htmlspecialchars(isset($courior->location) ? $courior->location : '') . '</td>
+                                            <td>' . htmlspecialchars(isset($courior->age) ? $courior->age : '') . '</td>
+                                            <td>' . htmlspecialchars(isset($courior->address) ? $courior->address : '') . '</td>
+                                            <td>' . htmlspecialchars(isset($courior->contact) ? $courior->contact : '') . '</td>
+                                            <td>
+                                                 <form method="post" action="' . Config::KECSO_URL_COURIORDATA . '" style="display:inline;">
+                                                     <input type="hidden" name="updateCouriorId" value="' . htmlspecialchars($objectIdStr) . '">
+                                                     <button type="submit" name="updateCourior">Szerkesztés</button>
+                                                 </form>
+                                                 <form method="post" action="' . Config::KECSO_URL_COURIORDATA . '" style="display:inline;">
+                                                    <input type="hidden" name="deleteCouriorId" value="' . htmlspecialchars($objectIdStr) . '">
+                                                    <button type="submit" name="deleteCourior">Törlés</button>
+                                                 </form>
+                                            </td>
+                                          </tr>';
+                            
 
                 // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
                 if ($editcourior && $editcourior['_id'] == $courior['_id']) {
@@ -110,35 +134,35 @@ private static function DisplayCouriorData($couriordata,$editcourior=null)
         return $html;
    }
     
-    private static function DisplayCouriors()
-    {
-        $couriors = CouriorsModel::GetCouriors();
-        $html = '<table border="1" cellpadding="10" >
-                    <thead>
-                        <tr><th>Futár azonosító</th>
-                            <th>Futár neve</th>
-                            <th>Futár adatai</th>
-                            <th>Futár címmenyisége</th></tr>
-                    </thead>
-                    <tbody>';
-        foreach ($couriors as $courior) 
-        {
-            $html .= '<tr>
-                        <td>' . $courior['ids'] . '</td>
-                        <td>' . $courior['name'] .'</td>
-                        <td><a href="'.Config::KECSO_URL_COURIORDATA.'?operation=couriordata&param=' . $courior['_id'] .'">Személyes adatok</a></td>
-                        <td><a href="'.Config::KECSO_URL_COURIORADDRESS.'?operation=courioraddress&param=' . $courior['_id'] .'">Hónapos szétbontásban</a></td>
-                        <td>
-                            <form method="post" action="' . Config::KECSO_URL . '" style="display:inline;">
-                                <input type="hidden" name="deleteCouriorId" value="' . $courior['_id'] . '">
-                                <button type="submit" name="deleteCourior">Törlés</button>
-                            </form>
-                        </td>
-                      </tr>';
-        }
-        $html .= '</tbody></table>';
-        return $html;
-    }
+   private static function DisplayCouriors()
+   {
+       $couriors = CouriorsModel::GetCouriors();
+       $html = '<table border="1" cellpadding="10" >
+                   <thead>
+                       <tr><th>Futár azonosító</th>
+                           <th>Futár neve</th>
+                           <th>Futár adatai</th>
+                           <th>Futár címmenyisége</th></tr>
+                   </thead>
+                   <tbody>';
+       foreach ($couriors as $courior) 
+       {
+           $html .= '<tr>
+                       <td>' . $courior['ids'] . '</td>
+                       <td>' . $courior['name'] .'</td>
+                       <td><a href="'.Config::KECSO_URL_COURIORDATA.'?operation=couriordata&param=' . $courior['_id'] .'">Személyes adatok</a></td>
+                       <td><a href="'.Config::KECSO_URL_COURIORADDRESS.'?operation=courioraddress&param=' . $courior['_id'] .'">Hónapos szétbontásban</a></td>
+                       <td>
+                           <form method="post" action="' . Config::KECSO_URL . '" style="display:inline;">
+                               <input type="hidden" name="deleteCouriorId" value="' . $courior['_id'] . '">
+                               <button type="submit" name="deleteCourior">Törlés</button>
+                           </form>
+                       </td>
+                     </tr>';
+       }
+       $html .= '</tbody></table>';
+       return $html;
+   }
     public static function CouriorsAddress($addresses, $editaddress = null)
     {
         $html = '';

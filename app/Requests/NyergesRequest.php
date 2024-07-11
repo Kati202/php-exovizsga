@@ -1,7 +1,7 @@
 <?php
 namespace App\Requests;
 
-class Request
+class NyergesRequest
 {
     //Cars
     public static function CarsInsert()
@@ -13,7 +13,20 @@ class Request
     {
         return isset($_POST['deleteCarId']);
     }
+    public static function AddCarCost()
+    {
+    return isset($_POST['addCarCost'],$_POST['saveCarCost'], $_POST['date'], $_POST['part'], $_POST['price']);
+    }
 
+    public static function EditCarCost()
+    {
+    return isset($_POST['editCarCost'],$_POST['updateCarCost'],$_POST['costId'], $_POST['date'], $_POST['part'], $_POST['price']);
+    }
+
+    public static function DeleteCarCost()
+    {
+    return isset($_POST['deleteCostId']);
+    }
 
     //Couriors
     public static function CouriorInsert()

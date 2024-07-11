@@ -53,6 +53,14 @@ public static function Disp($dispdata,$editdisp=null)
     
         return $groupedData;
     }
+    public static function ShowDispButton()
+    {
+     $html = '<form method="post" action="' . Config::KECSO_URL_DISP. '">';
+     $html .= '<button type="submit" name="showDisp">Diszpécser elérhetőségek megtekintése</button>';
+     $html .= '</form>';
+ 
+     return $html;
+    }
     private static function DisplayDispGroup($title, $items, $editdisp)
     {
         $html = '<h2>' . htmlspecialchars($title) . '</h2>';

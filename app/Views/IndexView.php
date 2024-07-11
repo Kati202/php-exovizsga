@@ -59,20 +59,13 @@ class IndexView
     }
     public static function ShowDepoButton()
     {
-     $html = '<form method="post" action="' . Config::KECSO_URL_DEPO . '">';
+     $html = '<form method="post" action="' . Config::HALAS_URL_DEPO  . '">';
      $html .= '<button type="submit" name="showDepo">Depó adatok megtekintése</button>';
      $html .= '</form>';
  
      return $html;
     } 
-    public static function ShowDispButton()
-    {
-     $html = '<form method="post" action="' . Config::KECSO_URL_DISP. '">';
-     $html .= '<button type="submit" name="showDisp">Diszpécser elérhetőségek megtekintése</button>';
-     $html .= '</form>';
- 
-     return $html;
-    }
+    
 
     private static function loadView($viewPath)
     {

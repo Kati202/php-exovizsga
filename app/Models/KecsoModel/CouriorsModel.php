@@ -16,11 +16,8 @@ class CouriorsModel
             $uri = 'mongodb://localhost:27017';
             $client = new Client($uri);
             self::$db = $client->exovizsga;
-            self::$db->createCollection('kecsocouriors'); 
-            self::$db->createCollection('kecsocouriorsdata'); 
-            self::$db->createCollection('kecsoaddresses'); 
-            
         }
+    //Főoldal
     }
     public static function InsertCouriors($courior)
 	{
@@ -42,6 +39,12 @@ class CouriorsModel
     $collection = self::$db->kecsocouriors;
     return $collection->findOne(['_id' => new ObjectId($id)]);
    }
+   public static function GetCouriorByIds($ids)
+   {
+    self::Init(); 
+    $collection = self::$db->kecsocouriors;
+    return $collection->findOne(['ids' => $ids]);
+   }
    public static function DeleteCouriors($id)
    {
        $collection = self::$db->kecsocouriors;
@@ -49,14 +52,14 @@ class CouriorsModel
 
        return $result->getDeletedCount();
    }
-   
+  //Futár személyes adatok 
   public static function InsertCouriordata($data)
    {
     self::Init(); 
     $collection = self::$db->kecsocouriorsdata;
     return $collection->insertOne($data);
    }
-  public static function GetCouriorData()
+   public static function GetCouriorData()
    {
     self::Init(); 
     $collection = self::$db->kecsocouriorsdata;
@@ -67,7 +70,8 @@ class CouriorsModel
    {
        self::Init(); 
        $collection = self::$db->kecsocouriorsdata;
-       return $collection->findOne(['_id' => new ObjectId($id)]);
+      
+       return $collection->findOne(['ids' => $id]);
    }
 
    public static function DeleteCouriordata($id)
@@ -85,7 +89,7 @@ class CouriorsModel
     $result = $collection->updateOne(['_id' => new ObjectId($couriorId)], ['$set' => $data]);
     return $result->getModifiedCount();
    }
-
+//Futár címei
    public static function InsertAddress($address)
     {
         self::Init(); 

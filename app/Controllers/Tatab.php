@@ -5,28 +5,27 @@ error_reporting(E_ALL);
 ini_set('display_errors', 'On');
 
 use App\Views\IndexView;
-use App\Views\KecsoView\KecsoCarView;
-use App\Views\KecsoView\KecsoCouriorView;
-use App\Views\KecsoView\KecsoDepoView;
-use App\Views\KecsoView\KecsoDispView;
-use App\Models\KecsoModel\CarsModel;
-use App\Models\KecsoModel\CouriorsModel;
-use App\Models\KecsoModel\DeposModel;
-use App\Models\KecsoModel\DispModel;
-use App\Requests\KecsoRequest;
+use App\Views\TatabView\TatabCarView;
+use App\Views\TatabView\TatabCouriorView;
+use App\Views\TatabView\TatabDepoView;
+use App\Views\TatabView\TatabDispView;
+use App\Models\TatabModel\CarsModel;
+use App\Models\TatabModel\CouriorsModel;
+use App\Models\TatabModel\DeposModel;
+use App\Models\TatabModel\DispModel;
+use App\Requests\TatabRequest;
 use App\Config;
 
-
-class Kecso
+class Tatab
 {
-public function kecso(): string
+public function tatab(): string
 {
         // Kezdeti nézet 
         $view = IndexView::Begin();
-        $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
+        $view .= IndexView::StartTitle('Tatabányai depó főoldal');
 
       
-        $view.=CarsModel::Init();
+       /* $view.=CarsModel::Init();
         // Új gépjármű hozzáadása
         if (KecsoRequest::CarsInsert()) {
             $car = [
@@ -67,21 +66,21 @@ public function kecso(): string
         }
        
 
-        $view .=KecsoCouriorView::ShowCourior();
-        $view .=KecsoDepoView::ShowDepoButton();
-        $view .=KecsoDispView::ShowDispButton();
+        $view .=KecsoCouriorView::ShowCourior();*/
+        $view .=TatabDepoView::ShowDepoButton();
+        $view .=TatabDispView::ShowDispButton();
 
         //Oldalzárás
         $view .= IndexView::End();
 
         return $view;
 }
-public function cardata($param): string
+public function cardata2($param): string
 {
-$carId = isset($param) ? $param : null;
-$view = IndexView::Begin();
-$view .= IndexView::StartTitle('Gépjármű adatai');
-$view .= CarsModel::Init();
+ $carId = isset($param) ? $param : null;
+ $view = IndexView::Begin();
+ $view .= IndexView::StartTitle('Gépjármű adatai');
+ $view .= CarsModel::Init();
 
 $uploadedFileName = '';
 
@@ -96,7 +95,7 @@ $view .= IndexView::End();
 
 return $view;}
 
-public function carcost($param): string
+public function carcost2($param): string
 {
     $carId = isset($param) ? $param : null;
     $view = CarsModel::Init();
@@ -188,7 +187,7 @@ public function carcost($param): string
     $view .= IndexView::End();
     return $view;
 }
-public function couriorData($param): string
+public function couriorData2($param): string
 {
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Futár adatai');
@@ -287,7 +286,7 @@ public function couriorData($param): string
     return $view;
 }
 
-public function courioraddress($param): string
+public function courioraddress2($param): string
 {
     // Futár cím kezelése itt
     /*úgy mint a dispet majd a hónap lesz group szempont csak a sorok száma(napok száma),név,időpont hónap,nap össz cím amivel kiment,leadott cím,véglegvissza,élővissza*/
@@ -344,7 +343,7 @@ public function courioraddress($param): string
     return $view;
 }
 
-public static function depo($param):string
+public static function depo2($param):string
 {
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Depó adatai');
@@ -354,12 +353,12 @@ public static function depo($param):string
     if ($_SERVER['REQUEST_METHOD'] === 'POST') 
     {
         // Depó szerkesztése
-        if (KecsoRequest::DepoUpdate()) 
+        if (TatabRequest::DepoUpdate()) 
         {
             $editDepoId = $_POST['updateDepoId'];
             $editDepo = DeposModel::GetDepoById($editDepoId);
         }
-       if (KecsoRequest::DepoSave()) 
+       if (TatabRequest::DepoSave()) 
         {
             $editDepoId = $_POST['editDepoId'];
             $title = $_POST['title'] ?? '';
@@ -369,35 +368,35 @@ public static function depo($param):string
                 DeposModel::UpdateDepodata($editDepoId, ['title' => $title, 'content' => $content]);
                 // Mentés után ne legyen szerkesztési állapotban
                 $editDepo = null;
-                header("Location: " . Config::KECSO_URL_DEPO);
+                header("Location: " . Config::TATAB_URL_DEPO);
                 exit();
             }
         }
         // Új depó adat hozzáadása
-        if (KecsoRequest::DepoInsert()) 
+        if (TatabRequest::DepoInsert()) 
         {
             $title = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
             if (!empty($title) && !empty($content)) 
             {
                 DeposModel::InsertDepodata(['title' => $title, 'content' => $content]);
-                header("Location: " . Config::KECSO_URL_DEPO);
+                header("Location: " . Config::TATAB_URL_DEPO);
                 exit();
             }
         }
         // Depó adat törlése
-        if (KecsoRequest::DepoDelete()) 
+        if (TatabRequest::DepoDelete()) 
         {
             $deleteDepoId = $_POST['deleteDepoId'];
             DeposModel::DeleteDepodata($deleteDepoId);
         }
     }
     $depodata = DeposModel::GetDepoData();
-    $view .= KecsoDepoView::Depo($depodata,$editDepo);
+    $view .= TatabDepoView::Depo($depodata,$editDepo);
     $view .= IndexView::CloseSection();
     return $view;
 }  
-  public static function disp($param):string
+  public static function disp2($param):string
 {
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Diszpécserek elérhetőségei');
@@ -405,38 +404,38 @@ public static function depo($param):string
     $editdisp = null; 
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (KecsoRequest::DispInsert()) {
+        if (TatabRequest::DispInsert()) {
             $name = $_POST['name'] ?? '';
             $title = $_POST['title'] ?? '';
             $phone = $_POST['phone'] ?? '';
             if (!empty($name) && !empty($title) && !empty($phone)) {
                 DispModel::InsertDispdata(['name' => $name, 'title' => $title, 'phone' => $phone]);
-                header("Location: " . Config::KECSO_URL_DISP);
+                header("Location: " . Config::TATAB_URL_DISP);
                 exit();
             }
             
         }
 
-        if (KecsoRequest::DispSave()) {
+        if (TatabRequest::DispSave()) {
             $editDispId = $_POST['editDispId'];
             $name = $_POST['name'] ?? '';
             $title = $_POST['title'] ?? '';
             $phone = $_POST['phone'] ?? '';
             if (!empty($editDispId) && !empty($name) && !empty($title) && !empty($phone)) {
                 DispModel::UpdateDispdata($editDispId, ['name' => $name, 'title' => $title, 'phone' => $phone]);
-                header("Location: " . Config::KECSO_URL_DISP);
+                header("Location: " . Config::TATAB_URL_DISP);
                 exit();
             }
         }
 
-        if (KecsoRequest::DispDelete()) {
+        if (TatabRequest::DispDelete()) {
             $deleteDispId = $_POST['deleteDispId'];
             DispModel::DeleteDispdata($deleteDispId);
-            header("Location: " . Config::KECSO_URL_DISP);
+            header("Location: " . Config::TATAB_URL_DISP);
             exit();
         }
 
-        if (KecsoRequest::DispUpdate()) {
+        if (TatabRequest::DispUpdate()) {
             $editDispId = $_POST['updateDispId'] ?? '';
             
             if (!empty($editDispId)) {
@@ -446,9 +445,8 @@ public static function depo($param):string
         }
     }
 
-    $view .= KecsoDispView::Disp($dispdata,$editdisp);
+    $view .= TatabDispView::Disp($dispdata,$editdisp);
     $view .= IndexView::CloseSection();
     return $view;
 } 
 }
-

@@ -1,150 +1,142 @@
 <?php
 namespace App\Models\KecsoModel;
 
-use App\Requests\Request;
 use MongoDB\Client;
-use App\Config;
 use MongoDB\BSON\ObjectId;
+use App\Config;
 
 class CarsModel
-{     
-    private static $client;
+{
     private static $db;
 
-    public static function Init() {
-        if (!isset(self::$client)) {
-            self::$client = new Client(Config::MONGODB_URI);
-        }
-
-        if (!isset(self::$db)) {
-            self::$db = self::$client->selectDatabase(Config::DATABASE_NAME);
-            self::ensureCollectionsExist();
+    public static function Init()
+    {
+        if (self::$db === null) 
+        {
+            $uri = 'mongodb://localhost:27017';
+            $client = new Client($uri);
+            self::$db = $client->exovizsga;
         }
     }
 
-  
     
 
-    public static function InsertImage($carId,$imageData)
-     {
+    public static function InsertCar($car)
+    {
+        self::Init();
         $collection = self::$db->kecsocar;
+        $result = $collection->insertOne($car);
+        return $result->getInsertedId(); // Visszatérési érték lehet az újonnan beszúrt dokumentum _id-je
+    }
 
-        $result = $collection->updateOne
-        (
-            ['_id' => new ObjectId($carId)],
+    public static function GetCars()
+    {
+        self::Init();
+        $collection = self::$db->kecsocar;
+        $cursor = $collection->find();
+        return $cursor->toArray();
+    }
+
+    public static function GetCarById($id)
+    {
+        self::Init();
+        $collection = self::$db->kecsocar;
+        return $collection->findOne(['_id' => new ObjectId($id)]);
+    }
+
+    public static function DeleteCar($id)
+    {
+        self::Init();
+        $collection = self::$db->kecsocar;
+        $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
+        return $result->getDeletedCount();
+    }
+
+    public static function InsertCarImage($carId, $imageData)
+    {
+        self::Init();
+        $collection = self::$db->kecsocar_images;
+    
+        // Az adatok beszúrása az adatbázisba ObjectId használatával
+        $result = $collection->updateOne(
+            ['_id' => new MongoDB\BSON\ObjectId($carId)],
             ['$push' => ['images' => $imageData]]
         );
     
         return $result->getModifiedCount();
-     }
+    }
     
-    public static function InsertCar($car)
+
+    public static function GetCarImages($carId)
     {
-        $collection = self::$db->kecsocar;
-        return $collection->insertOne($car);
+        self::Init();
+        $collection = self::$db->kecsocar_images;
+        $car = $collection->findOne(['_id' => new ObjectId($carId)]);
+        return isset($car['images']) ? $car['images'] : [];
     }
-    public static function InsertCarCost($carId,$carCost)
+
+    public static function InsertCarCost($carCost)
     {
-    $collection = self::$db->kecsocarcost;
+    self::Init();
+    $collection = self::$db->kecsocar_cost;
 
-    $result = $collection->updateOne
-    (
-        ['_id' => new ObjectId($carId)],
-        ['$push' => ['carCosts' => $carCost]]
-    );
+    // Konvertáljuk a dátumot UTCDateTime formátumba
+    $timestamp = strtotime($carCost['date']);
+    $milliseconds = $timestamp * 1000;
+    $carCost['date'] = new \MongoDB\BSON\UTCDateTime($milliseconds);
 
-    return $result->getModifiedCount();
+    $result = $collection->insertOne($carCost);
+    return $result->getInsertedCount() > 0;
     }
 
-
-    public static function GetCars()
-     {
-    $collection = self::$db->kecsocar;
-    $options = ['sort' => ['license' => 1]];
-    $list = $collection->find([], $options);
-         
-    return $list->toArray();
-    }
-     public static function GetCarById($id)
-    {
-    $collection = self::$db->kecsocar;
-    $car = $collection->findOne(['_id' => new ObjectId($id)]);
-
-    return $car;
-    }
     public static function GetCarCosts($carId)
     {
-        $collection = self::$db->kecsocarcost;
-        $carCosts = $collection->find(['carId' => new ObjectId($carId)]); // Módosítottam az _id helyett carId-re
+        self::Init();
+        $collection = self::$db->kecsocar_cost;
+        $carCosts = $collection->find(['_id' => new ObjectId($carId)]);
     
-        return $carCosts->toArray();
-    }
-    public static function GetImages($carId) 
-    {
-    $collection = self::$db->kecsocar;
-    $car = $collection->findOne(['_id' => new ObjectId($carId)]);
-    return isset($car['images']) ? $car['images'] : [];
-    }
-
-    public static function GetCarCostsByCarId($carId)
-    {
-    $collection = self::$db->kecsocarcost;
-    $carCosts = $collection->find(['carId' => new ObjectId($carId)]);
-
-    return $carCosts->toArray();
-    }
-    public static function UpdateCar($id, $data)
-    {
-        $collection = self::$db->kecsocar;
-        return $collection->updateOne(self::CreateFilterById($id), ['$set' => $data]);
-    }
-
-
-
-    public static function DeleteCar($id)
-    {
-        $collection = self::$db->kecsocar;
-        $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
-
-        return $result->getDeletedCount();
-    }
-    public static function DeleteCarCost($id)
-{
-    $collection = self::$db->kecsocarcost;
-
-    try {
-        $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
-        return $result->getDeletedCount();
-    } catch (\Exception $e) {
-        // Hiba kezelése (pl. logolás vagy kivétel dobása)
-        return 0;
-    }
-}
+        $costs = [];
+        foreach ($carCosts as $cost) {
+            $costs[] = 
+            [
+                '_id' => (string) $cost['_id'],
+                'date' => $cost['date']->toDateTime()->format('Y-m-d H:i:s'),  
+                'part' => $cost['part'],
+                'price' => $cost['price']
+            ];
+        }
+        var_dump($costs);
     
-    private static function CreateFilterById($id)
-    {
-        if(!($id instanceof ObjectId))
-        {
-            $id = new ObjectId($id);
-        }
-        $filter = ['_id' => $id];
-        return $filter;
+        return $costs;
     }
-    private static function ensureCollectionsExist() 
+
+    public static function UpdateCarCost($costId, $carCost)
     {
-        $collections = ['kecsocar', 'kecsocarcost', 'kecsocar_images'];
-
-    foreach ($collections as $collectionName) {
-        $filter = ['name' => $collectionName];
-        $options = ['filter' => $filter];
-
-        $collectionInfo = self::$db->listCollections($options);
-
-        // Check if collection exists
-        if (empty(iterator_to_array($collectionInfo))) {
-            self::$db->createCollection($collectionName);
-        }
+        self::Init();
+        $collection = self::$db->kecsocar_cost;
+    
+        // Konvertáljuk a dátumot UTCDateTime formátumba
+        $timestamp = strtotime($carCost['date']);
+        $milliseconds = $timestamp * 1000;
+        $carCost['date'] = new \MongoDB\BSON\UTCDateTime($milliseconds);
+    
+        $result = $collection->updateOne(
+            ['_id' => new ObjectId($costId)],
+            ['$set' => [
+                'date' => $carCost['date'],
+                'part' => $carCost['part'],
+                'price' => $carCost['price']
+            ]]
+        );
+        return $result->getModifiedCount();
     }
+
+    public static function DeleteCarCost($costId)
+    {
+        self::Init();
+        $collection = self::$db->kecsocar_cost;
+        $result = $collection->deleteOne(['_id' => new ObjectId($costId)]);
+        return $result->getDeletedCount();
     }
 }
 ?>

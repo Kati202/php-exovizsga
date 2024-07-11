@@ -1,17 +1,16 @@
 <?php
-namespace App\Views\KecsoView;
+namespace app\Views\NyergesView;
 
-
-use App\Models\KecsoModel\DepoModel;
+use App\Models\NyergesModel\DepoModel;
 use App\Views\IndexView;
 use App\Config;
 
-class KecsoDepoView
+class NyergesDepoView
 {
     public static function Depo($depodata,$editDepo=null)
     {
       
-        $html = '<form method="post" action="' . Config::KECSO_URL_DEPO .'">';
+        $html = '<form method="post" action="' . Config::NYERGES_URL_DEPO .'">';
         $html .= IndexView::CreateInput('Kategória', 'title');
         $html .= IndexView::CreateInput('Adat', 'content');
         $html .= '<button type="submit" name="newDepo">Depó adat hozzáadása</button>';
@@ -21,17 +20,9 @@ class KecsoDepoView
 
         return $html;
     }
-    public static function ShowDepoButton()
-    {
-     $html = '<form method="post" action="' . Config::KECSO_URL_DEPO . '">';
-     $html .= '<button type="submit" name="showDepo">Depó adatok megtekintése</button>';
-     $html .= '</form>';
- 
-     return $html;
-    }
     public static function DepoEdit($depo)
    {
-        $html = '<form method="post" action="' . Config::KECSO_URL_DEPO .'">';
+        $html = '<form method="post" action="' . Config::NYERGES_URL_DEPO .'">';
         $html .= '<input type="hidden" name="editDepoId" value="' . $depo['_id'] . '">';
         $html .= IndexView::CreateInputValue('Kategória', 'title', $depo['title']);
         $html .= IndexView::CreateInputValue('Adat', 'content', $depo['content']);
@@ -39,6 +30,14 @@ class KecsoDepoView
         $html .= '</form>';
 
     return $html;
+    }
+    public static function ShowDepoButton()
+    {
+     $html = '<form method="post" action="' . Config::NYERGES_URL_DEPO . '">';
+     $html .= '<button type="submit" name="showDepo">Depó adatok megtekintése</button>';
+     $html .= '</form>';
+ 
+     return $html;
     }
     private static function DisplayDepos($depodata,$editDepo=null)
     {
@@ -59,11 +58,11 @@ class KecsoDepoView
                                         <td>' . htmlspecialchars($depo['title']) . '</td>
                                         <td>' . htmlspecialchars($depo['content']) . '</td>
                                         <td>
-                                             <form method="post" action="' . Config::KECSO_URL_DEPO . '" style="display:inline;">
+                                             <form method="post" action="' . Config::NYERGES_URL_DEPO . '" style="display:inline;">
                                                  <input type="hidden" name="updateDepoId" value="' . $depo['_id'] . '">
                                                  <button type="submit" name="updateDepo">Szerkesztés</button>
                                              </form>
-                                             <form method="post" action="' . Config::KECSO_URL_DEPO . '" style="display:inline;">
+                                             <form method="post" action="' . Config::NYERGES_URL_DEPO . '" style="display:inline;">
                                                 <input type="hidden" name="deleteDepoId" value="' . $depo['_id'] . '">
                                                 <button type="submit" name="deleteDepo">Törlés</button>
                                              </form>
@@ -82,5 +81,5 @@ class KecsoDepoView
         }
 
         return $html;
-   }
+   } 
 }

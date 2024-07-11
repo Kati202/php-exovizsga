@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Validation;
+namespace App;
 
 class KecsoValidation
 {
@@ -9,7 +9,6 @@ class KecsoValidation
     {
         $errors = [];
 
-        // Mezők ellenőrzése
         $requiredFields = ['name', 'date', 'dateaddress', 'age', 'address', 'mothername'];
 
         foreach ($requiredFields as $field) {
@@ -17,16 +16,7 @@ class KecsoValidation
                 $errors[$field] = 'Minden mező kitöltése kötelező!';
             }
         }
-
-        // Hónap ellenőrzése (példa szerint, hogy július helyett júl is elfogadott legyen)
-        $validMonths = ['január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus', 'szeptember', 'október', 'november', 'december'];
-        $submittedMonth = strtolower($postData['date']);
-        $submittedMonth = str_replace('júl', 'július', $submittedMonth); // Hónap javítása
-
-        if (!in_array($submittedMonth, $validMonths)) {
-            $errors['date'] = 'Érvénytelen hónap formátum!';
-        }
-
-        return $errors;
+       return $errors;
+      
     }
 }

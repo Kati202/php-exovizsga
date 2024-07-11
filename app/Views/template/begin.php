@@ -14,7 +14,7 @@
   <header>
     <nav>
     <a href="<?php echo \App\Config::KECSO_URL; ?>">Kecskeméti depó</a>
-    <a href="<?php echo \App\Config::TATA_URL; ?>">Tatabánya depó</a>
+    <a href="<?php echo \App\Config::TATAB_URL; ?>">Tatabánya depó</a>
     <a href="<?php echo \App\Config::NYERGES_URL; ?>">Nyergesújfalui depó</a>
     <a href="<?php echo \App\Config::HALAS_URL; ?>">Kiskunhalasi depó</a>
     <a href="<?php echo \App\Config::HOME_URL; ?>">Vissza a bejelentkezési felülethez</a>
