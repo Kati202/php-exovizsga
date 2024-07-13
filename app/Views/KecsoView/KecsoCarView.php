@@ -23,7 +23,7 @@ public static function ShowCar()
         return $html;
 
     }
-public static function CarData($carId,$uploadedFileName)
+public static function CarData($carId)
     {
         $html = '<form method="post" action="'. Config::KECSO_URL_CARDATA .'" enctype="multipart/form-data">';
         $html .= '<input type="hidden" name="carId" value="' . htmlspecialchars($carId) . '">';
@@ -36,7 +36,7 @@ public static function CarData($carId,$uploadedFileName)
         $html .= '</form>';
 
         // Feltöltött képek listázása
-        $html .= self::ListUploadedImages($uploadedFileName);
+        $html .= self::ListUploadedImages($carId);
 
         return $html;
     }
@@ -71,7 +71,7 @@ public static function CarData($carId,$uploadedFileName)
                     CarsModel::InsertCarImage($carId, $imageData);
 
                     // Sikeres feltöltés esetén átirányítás
-                    header("Location: " . Config::KECSO_URL_CARDATA);
+                    header("Location: " . Config::KECSO_URL_CARDATA . "?param=" . htmlspecialchars($carId));
                     exit();
                 } else {
                     $html .= "Hiba történt a kép feltöltése során.";
@@ -115,7 +115,30 @@ public static function CarData($carId,$uploadedFileName)
         return $html;
     }
     
-   
+    private static function ListUploadedImages($carId)
+{
+    $uploadDir = 'uploads/kecso/';
+    $carImages = CarsModel::GetCarImages($carId); 
+
+    $html = '<h2>Feltöltött képek:</h2>';
+
+    if (!empty($carImages)) {
+        $html .= '<ul>';
+        foreach ($carImages as $image) {
+            $imageUrl = $uploadDir . $image['file'];
+
+            $html .= '<li>';
+            $html .= '<img src="' . htmlspecialchars($imageUrl) . '" alt="Feltöltött kép">';
+            $html .= '<p>Fájl neve: <a href="' . htmlspecialchars($imageUrl) . '" target="_blank">' . htmlspecialchars($image['data']) . '</a></p>';
+            $html .= '</li>';
+        }
+        $html .= '</ul>';
+    } else {
+        $html .= '<p>Nincsenek feltöltött képek.</p>';
+    }
+
+    return $html;
+}
     private static function DisplayCars()
     {
         $cars = CarsModel::GetCars();
@@ -144,30 +167,7 @@ public static function CarData($carId,$uploadedFileName)
         $html .= '</tbody></table>';
         return $html;
     }
-    private static function ListUploadedImages($uploadedFileName) 
-{
-    $html = '<h2>Feltöltött képek:</h2>';
-
-    if (!empty($uploadedFileName)) {
-        // Elérési útvonal generálása a feltöltött fájlhoz
-        $imageUrl = 'uploads/kecso/' . $uploadedFileName;
-
-        $html .= '<ul>';
-        $html .= '<li>';
-        // Kép megjelenítése az <img> elem használatával
-        $html .= '<img src="' . htmlspecialchars($imageUrl) . '" alt="Feltöltött kép">';
-        // Fájl nevének kattintható linkként való megjelenítése
-        $html .= '<p>Fájl neve: <a href="' . htmlspecialchars($imageUrl) . '" target="_blank">' . htmlspecialchars($uploadedFileName) . '</a></p>';
-        // További adatok megjelenítése (opcionális)
-        // pl. feltöltés dátuma, stb.
-        $html .= '</li>';
-        $html .= '</ul>';
-    } else {
-        $html .= '<p>Nincsenek feltöltött képek.</p>';
-    }
-
-    return $html;
-}
+   
     
     private static function DisplayCarCosts($carId, $editCarCost = null)
     {

@@ -50,6 +50,11 @@ class IndexView
                     <input type="text" name="'. $name .'" id="'. $name .'">
                 </div>';
     }
+    public static function CreateHiddenInput($name,$value)
+    {
+        return'<input type="hidden" name="'.$name.'" id="'.$name.'" value="'.$value.'">
+        ';
+    }
     public static function CreateInputValue($label, $name, $value = '')
     {
         return '<div>

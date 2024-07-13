@@ -83,24 +83,26 @@ $view = IndexView::Begin();
 $view .= IndexView::StartTitle('Gépjármű adatai');
 $view .= CarsModel::Init();
 
-$uploadedFileName = '';
+
 
 // Fájlfeltöltés kezelése
-$view .= KecsoCarView::HandleFileUpload();
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
+    $view .= KecsoCarView::HandleFileUpload();
+}
 
-// Űrlap megjelenítése és feltöltött képek listázása
-$view .= KecsoCarView::CarData($carId, $uploadedFileName);
 
-// Vége
+$view .= KecsoCarView::CarData($carId);
+
+
 $view .= IndexView::End();
 
 return $view;}
 
 public function carcost($param): string
-{
+{   
     $carId = isset($param) ? $param : null;
     $view = CarsModel::Init();
-    //$view = CarsModel::InsertCarCost();
+    $view = CarsModel::InsertCarCost($carCost);
     $view .= IndexView::Begin();
     $view .= IndexView::StartTitle('Javítási költségek');
     $view .= KecsoCarView::CarCost($carId);
@@ -184,7 +186,7 @@ public function carcost($param): string
             }
         }
     }
-
+    
     $view .= IndexView::End();
     return $view;
 }
@@ -193,10 +195,15 @@ public function couriorData($param): string
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Futár adatai');
     $view .= CouriorsModel::Init();
-
+    
     $editCourior = null;
-    $error='';
-    $id=$_REQUEST['param'] ?? '100';
+    $id = $_REQUEST['param'] ?? '';
+    if ($id) {
+        $couriordata = CouriorsModel::GetCouriorDataById($id);
+    } else {
+        $couriordata = [];
+    }
+
     
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -211,6 +218,7 @@ public function couriorData($param): string
     // Futár mentése
         if (KecsoRequest::CouriorSave()) {
             $editCouriorId = $_POST['editCouriorId'] ?? null;
+            //$id=$_POST['_id'] ?? '';
             $name = $_POST['name'] ?? '';
             $date = $_POST['date'] ?? '';
             $dateaddress = $_POST['dateaddress'] ?? '';
@@ -221,6 +229,7 @@ public function couriorData($param): string
             if (!empty($editCouriorId) && !empty($name) && !empty($date) && !empty($dateaddress) && !empty($age) && !empty($address) && !empty($mothername)) 
             {
                 CouriorsModel::UpdateCouriordata($editCouriorId, [
+                    //'_id' =>$id,
                     'name' => $name,
                     'date' => $date,
                     'dateaddress' => $dateaddress,
@@ -275,8 +284,9 @@ public function couriorData($param): string
     }
     // Futárok adatainak lekérése az adatbázisból
     
-    $couriorData = CouriorsModel::GetCouriorDataById($id);
-    $view .= KecsoCouriorView::CouriorData($couriorData, $editCourior);
+    $couriorData = CouriorsModel::GetCouriorData();
+   
+    $view .= KecsoCouriorView::CouriorData($couriorData, $editCourior,$id);
     $view .= IndexView::CloseSection();
     $view .= IndexView::End();
     
@@ -381,8 +391,7 @@ public static function depo($param):string
             if (!empty($title) && !empty($content)) 
             {
                 DeposModel::InsertDepodata(['title' => $title, 'content' => $content]);
-                header("Location: " . Config::KECSO_URL_DEPO);
-                exit();
+        
             }
         }
         // Depó adat törlése

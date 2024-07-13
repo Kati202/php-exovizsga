@@ -59,22 +59,33 @@ class CarsModel
     
         // Az adatok beszúrása az adatbázisba ObjectId használatával
         $result = $collection->updateOne(
-            ['_id' => new MongoDB\BSON\ObjectId($carId)],
+            ['_id' => new \MongoDB\BSON\ObjectId($carId)],
             ['$push' => ['images' => $imageData]]
         );
     
-        return $result->getModifiedCount();
+        return $result->getModifiedCount();;
     }
     
-
     public static function GetCarImages($carId)
-    {
-        self::Init();
-        $collection = self::$db->kecsocar_images;
-        $car = $collection->findOne(['_id' => new ObjectId($carId)]);
-        return isset($car['images']) ? $car['images'] : [];
-    }
+{
+    self::Init();
+    $collection = self::$db->kecsocar_images;
 
+    // Validate the carId
+    if (!self::isValidObjectId($carId)) {
+        throw new InvalidArgumentException("Invalid ObjectId string: $carId");
+    }
+    var_dump($carId);
+
+    $car = $collection->findOne(['_id' => new ObjectId($carId)]);
+    return isset($car['images']) ? $car['images'] : [];
+}
+
+private static function isValidObjectId($id)
+{
+    return preg_match('/^[a-f\d]{24}$/i', $id);
+}
+   
     public static function InsertCarCost($carCost)
     {
     self::Init();

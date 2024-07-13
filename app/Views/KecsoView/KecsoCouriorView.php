@@ -23,10 +23,10 @@ class KecsoCouriorView
         $html.=IndexView::CloseSection();
         return $html;
     }
-public static function CouriorData($couriordata,$editcourior=null)
+    public static function CouriorData($couriordata, $editcourior = null, $id = null)
     {
-        
-        $html = '<form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $couriordata['_id'] . '">';
+        $html = '<form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $id . '">';
+        $html .= IndexView::CreateHiddenInput('ids', $id);
         $html .= IndexView::CreateInput('Neve', 'name');
         $html .= IndexView::CreateInput('Születési ideje', 'date');
         $html .= IndexView::CreateInput('Születési helye', 'dateaddress');
@@ -35,105 +35,87 @@ public static function CouriorData($couriordata,$editcourior=null)
         $html .= IndexView::CreateInput('Anyja neve', 'mothername');
         $html .= '<button type="submit" name="newCouriors">Futár adat hozzáadása</button>';
         $html .= '</form>';
-
-        $html .= self::DisplayCouriorData($couriordata, $editcourior);
-
+    
+        $html .= self::DisplayCouriorData($couriordata, $editcourior,$id );
+    
         return $html;
     }
+    
     public static function CouriorEdit($courior)
-    { 
-        $couriorId = null;
-        
-        $html = '<form method="post" action="' . Config::KECSO_URL_COURIORDATA .'">';
-        $html .= '<input type="hidden" name="editCouriorId" value="' . ($courior['_id'] ?? '') . '">';
-        $html .= IndexView::CreateInputValue('Neve', 'name', $courior['name']);
-        $html .= IndexView::CreateInputValue('Születési ideje', 'date', $courior['date'] );
-        $html .= IndexView::CreateInputValue('Születési helye', 'dateaddress', $courior['dateaddress'] );
-        $html .= IndexView::CreateInputValue('Kora', 'age', $courior['age'] );
-        $html .= IndexView::CreateInputValue('Lakcíme', 'address', $courior['address'] );
-        $html .= IndexView::CreateInputValue('Anyja neve', 'mothername', $courior['mothername']);
-        $html .= '<button type="submit" name="saveCouriordata">Mentés</button>';
-        $html .= '</form>';
-    
-        return $html;
-    }
-    
-private static function DisplayCouriorData($couriordata,$editcourior=null)
-    {
-        $html = '';
+{
+    $couriorId = (string)($courior['_id'] ?? '');
 
+    $html = '<form method="post" action="' . Config::KECSO_URL_COURIORDATA . '">';
+    $html .= '<input type="hidden" name="editCouriorId" value="' . htmlspecialchars($couriorId) . '">';
+    $html .= IndexView::CreateHiddenInput('ids', $couriorId);
+    $html .= IndexView::CreateInputValue('Neve', 'name', $courior['name']);
+    $html .= IndexView::CreateInputValue('Születési ideje', 'date', $courior['date']);
+    $html .= IndexView::CreateInputValue('Születési helye', 'dateaddress', $courior['dateaddress']);
+    $html .= IndexView::CreateInputValue('Kora', 'age', $courior['age']);
+    $html .= IndexView::CreateInputValue('Lakcíme', 'address', $courior['address']);
+    $html .= IndexView::CreateInputValue('Anyja neve', 'mothername', $courior['mothername']);
+    $html .= '<button type="submit" name="saveCouriordata">Mentés</button>';
+    $html .= '</form>';
 
-        if (!empty($couriordata)) {
-            $html .= '<table border="1" cellpadding="10">
-                        <thead>
-                            <tr>
-                                <th>Neve</th>
-                                <th>Születési ideje</th>
-                                <th>Születési helye</th>
-                                <th>Kora</th>
-                                <th>Lakcíme</th>
-                                <th>Anyja Neve</th>
-                            </tr>
-                        </thead>
-                        <tbody>';
-                        
-                        foreach ($couriordata as $courior) {
-                           
-                         
-                            
-                              
+    return $html;
+}
 
-                                // Check if $courior has an 'oid' property
-                                if (property_exists($courior, 'oid')) {
-                                    $objectId = $courior->oid;
-                                } else {
-                                    // Handle nested or alternative structure if 'oid' is not a direct property
-                                    // For example, if it is stored under another property or array
-                                    // Adjust this section based on actual structure, e.g., if stored under $courior->_id
-                                    if (property_exists($courior, '_id')) {
-                                        $objectId = $courior->_id;
-                                    } else {
-                                        // Fallback in case we cannot find the ObjectId
-                                        $objectId = null;
-                                    }
-                                }
-                        
-                                // Extract ObjectId as a string if it exists
-                                $objectIdStr = $objectId ? (method_exists($objectId, '__toString') ? (string)$objectId : (string)$objectId->jsonSerialize()) : '';
-                                $html .= '<tr>
-                                            <td>' . htmlspecialchars(isset($courior->name) ? $courior->name : '') . '</td>
-                                            <td>' . htmlspecialchars(isset($courior->date) ? $courior->date : '') . '</td>
-                                            <td>' . htmlspecialchars(isset($courior->location) ? $courior->location : '') . '</td>
-                                            <td>' . htmlspecialchars(isset($courior->age) ? $courior->age : '') . '</td>
-                                            <td>' . htmlspecialchars(isset($courior->address) ? $courior->address : '') . '</td>
-                                            <td>' . htmlspecialchars(isset($courior->contact) ? $courior->contact : '') . '</td>
-                                            <td>
-                                                 <form method="post" action="' . Config::KECSO_URL_COURIORDATA . '" style="display:inline;">
-                                                     <input type="hidden" name="updateCouriorId" value="' . htmlspecialchars($objectIdStr) . '">
-                                                     <button type="submit" name="updateCourior">Szerkesztés</button>
-                                                 </form>
-                                                 <form method="post" action="' . Config::KECSO_URL_COURIORDATA . '" style="display:inline;">
-                                                    <input type="hidden" name="deleteCouriorId" value="' . htmlspecialchars($objectIdStr) . '">
-                                                    <button type="submit" name="deleteCourior">Törlés</button>
-                                                 </form>
-                                            </td>
-                                          </tr>';
-                            
+     
+private static function DisplayCouriorData($couriordata, $editcourior = null,$id = null)
+{
+    $html = '';
 
-                // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
-                if ($editcourior && $editcourior['_id'] == $courior['_id']) {
-                    $html .= '<tr><td colspan="3">' . self::CouriorEdit($editcourior) . '</td></tr>';
-                }
+    if (!empty($couriordata)) {
+        $html .= '<table border="1" cellpadding="10">
+                    <thead>
+                        <tr>
+                            <th>Neve</th>
+                            <th>Születési ideje</th>
+                            <th>Születési helye</th>
+                            <th>Kora</th>
+                            <th>Lakcíme</th>
+                            <th>Anyja Neve</th>
+                            <th>Műveletek</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+
+        foreach ($couriordata as $courior) {
+            $couriorId =(string)($courior->_id ?? '');
+
+            $html .= '<tr>
+                        <td>' . htmlspecialchars($courior->name ?? '') . '</td>
+                        <td>' . htmlspecialchars($courior->date ?? '') . '</td>
+                        <td>' . htmlspecialchars($courior->dateaddress ?? '') . '</td>
+                        <td>' . htmlspecialchars($courior->age ?? '') . '</td>
+                        <td>' . htmlspecialchars($courior->address ?? '') . '</td>
+                        <td>' . htmlspecialchars($courior->mothername ?? '') . '</td>
+                        <td>
+                           <form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $couriorId . '" style="display:inline;">
+                                <input type="hidden" name="updateCouriorId" value="' . htmlspecialchars($couriorId) . '">
+                                <button type="submit" name="updateCourior">Szerkesztés</button>
+                            </form>
+                            <form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $couriorId . '" style="display:inline;">
+                                <input type="hidden" name="deleteCouriorId" value="' . htmlspecialchars($couriorId) . '">
+                                <button type="submit" name="deleteCourior">Törlés</button>
+                            </form>
+                        </td>
+                      </tr>';
+
+            // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
+            if ($editcourior && $editcourior['_id'] == $couriorId) {
+                $html .= '<tr><td colspan="7">' . self::CouriorEdit($editcourior) . '</td></tr>';
             }
-
-            $html .= '</tbody></table>';
-        } else {
-            $html .= '<p>Nincsenek futár adatok.</p>';
         }
 
-        return $html;
-   }
-    
+        $html .= '</tbody></table>';
+    } else {
+        $html .= '<p>Nincsenek futár adatok.</p>';
+    }
+
+    return $html;
+}
+
    private static function DisplayCouriors()
    {
        $couriors = CouriorsModel::GetCouriors();

@@ -70,24 +70,26 @@ class CouriorsModel
    {
        self::Init(); 
        $collection = self::$db->kecsocouriorsdata;
-      
-       return $collection->findOne(['ids' => $id]);
+       $filter = self::CreateFilterById($id);
+       return $collection->findOne($filter);
    }
 
    public static function DeleteCouriordata($id)
    {
-    self::Init(); 
-    $collection = self::$db->kecsocouriorsdata;
-    $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
-    return $result->getDeletedCount();
+       self::Init(); 
+       $collection = self::$db->kecsocouriorsdata;
+       $filter = self::CreateFilterById($id);
+       $result = $collection->deleteOne($filter);
+       return $result->getDeletedCount();
    }
 
    public static function UpdateCouriordata($couriorId, $data)
    {
-    self::Init(); 
-    $collection = self::$db->kecsocouriorsdata;
-    $result = $collection->updateOne(['_id' => new ObjectId($couriorId)], ['$set' => $data]);
-    return $result->getModifiedCount();
+       self::Init(); 
+       $collection = self::$db->kecsocouriorsdata;
+       $filter = self::CreateFilterById($couriorId);
+       $result = $collection->updateOne($filter, ['$set' => $data]);
+       return $result->getModifiedCount();
    }
 //Futár címei
    public static function InsertAddress($address)
@@ -126,6 +128,15 @@ class CouriorsModel
         $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
         return $result->getDeletedCount();
     }
+    private static function CreateFilterById($id)
+   {
+    if(!($id instanceof \MongoDB\BSON\ObjectId))
+    {
+        $id = new \MongoDB\BSON\ObjectId($id);
+    }
+    $filter = ['_id' => $id];
+    return $filter;
+   }
 }
 /*<?php
 namespace App\Models\KecsoModel;
