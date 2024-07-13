@@ -218,7 +218,7 @@ public function couriorData($param): string
     // Futár mentése
         if (KecsoRequest::CouriorSave()) {
             $editCouriorId = $_POST['editCouriorId'] ?? null;
-            //$id=$_POST['_id'] ?? '';
+            $ids=$_POST['ids'] ?? '';
             $name = $_POST['name'] ?? '';
             $date = $_POST['date'] ?? '';
             $dateaddress = $_POST['dateaddress'] ?? '';
@@ -226,10 +226,10 @@ public function couriorData($param): string
             $address = $_POST['address'] ?? '';
             $mothername = $_POST['mothername'] ?? '';
     // Ellenőrzés, hogy minden mező ki legyen töltve
-            if (!empty($editCouriorId) && !empty($name) && !empty($date) && !empty($dateaddress) && !empty($age) && !empty($address) && !empty($mothername)) 
+            if (!empty($editCouriorId) && !empty($ids) && !empty($name) && !empty($date) && !empty($dateaddress) && !empty($age) && !empty($address) && !empty($mothername)) 
             {
                 CouriorsModel::UpdateCouriordata($editCouriorId, [
-                    //'_id' =>$id,
+                    'ids' =>$ids,
                     'name' => $name,
                     'date' => $date,
                     'dateaddress' => $dateaddress,
@@ -246,7 +246,9 @@ public function couriorData($param): string
         }
 
     // Új futár hozzáadása  
-        if (KecsoRequest::CouriorsInsert()) {
+        if (KecsoRequest::CouriorsInsert()) 
+        {
+            $ids = $_POST['ids'] ?? '';
             $name = $_POST['name'] ?? '';
             $date = $_POST['date'] ?? '';
             $dateaddress = $_POST['dateaddress'] ?? '';
@@ -254,8 +256,9 @@ public function couriorData($param): string
             $address = $_POST['address'] ?? '';
             $mothername = $_POST['mothername'] ?? '';
     // Ellenőrzés, hogy minden mező ki legyen töltve
-            if (!empty($name) && !empty($date) && !empty($dateaddress) && !empty($age) && !empty($address) && !empty($mothername)) {
+            if  (!empty($ids) &&!empty($name) && !empty($date) && !empty($dateaddress) && !empty($age) && !empty($address) && !empty($mothername)) {
                 CouriorsModel::InsertCouriordata([
+                    'ids' => $ids,
                     'name' => $name,
                     'date' => $date,
                     'dateaddress' => $dateaddress,

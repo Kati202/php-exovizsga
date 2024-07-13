@@ -3,8 +3,9 @@ namespace App;
 
 class Config
 {
-    public const MONGODB_URI = 'mongodb://localhost:27017';
-    public const DATABASE_NAME = 'exovizsga';
+    const MONGODB_HOST = 'localhost';
+    const MONGODB_PORT = 27017;
+    const MONGODB_DATABASE = 'exovizsga';
     
     public const BASE_URL = 'http://localhost/php-exovizsga/public/';
     //Kecskeméti urlek

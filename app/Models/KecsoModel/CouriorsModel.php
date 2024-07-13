@@ -106,12 +106,12 @@ class CouriorsModel
         return $cursor->toArray();
     }
 
-    public static function GetAddressById($id)
+    /*public static function GetAddressById($id)
     {
         self::Init(); 
         $collection = self::$db->kecsoaddresses;
         return $collection->findOne(['_id' => new ObjectId($id)]);
-    }
+    }*/
 
     public static function UpdateAddress($id, $data)
     {
