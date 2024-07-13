@@ -100,94 +100,62 @@ return $view;}
 
 public function carcost($param): string
 {   
-    $carId = isset($param) ? $param : null;
-    $view = CarsModel::Init();
-    $view = CarsModel::InsertCarCost($carCost);
-    $view .= IndexView::Begin();
-    $view .= IndexView::StartTitle('Javítási költségek');
-    $view .= KecsoCarView::CarCost($carId);
    
+    $view = IndexView::Begin();
+    $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
 
-    $carCosts = CarsModel::GetCarCosts($carId);
-    if (!empty($carCosts)) {
-        // A költségek feldolgozása és hozzáadása a nézethez
-        foreach ($carCosts as $cost) {
-            $view .= '<p>Date: ' . $cost['date'] . ', Part: ' . $cost['part'] . ', Price: ' . $cost['price'] . '</p>';
-        }
+    /*if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
+        $startDate = $_POST['startDate'] ?? date('Y-m-01');
+        $endDate = $_POST['endDate'] ?? date('Y-m-t');
     } else {
-        $view .= '<p>Nincsenek költségek.</p>';
+        $startDate = date('Y-m-01');
+        $endDate = date('Y-m-t');
+    }*/
+
+   /* $deliveries = CarsModel::SumDeliveredAddressesByDateAndGroup($startDate, $endDate);
+    var_dump($deliveries);*/
+
+    // Autóbeszúrás 
+    if (KecsoRequest::CarCostInsert()) {
+        $carcost = [
+            'ids' => $_POST['ids'],
+            'date' => $_POST['date'], 
+            'part' => $_POST['part'],
+            'cost' => $_POST['cost'],
+        ];
+        CarsModel::InsertCarCost($carcost);
+        header("Location: " . Config::KECSO_URL_CARCOST);
+        exit();
     }
-    
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') 
-    {
-        // Javítási költség hozzáadása
-        if (KecsoRequest::AddCarCost()) 
-        {
-            $carCost = [
-                'carId' => new \MongoDB\BSON\ObjectId($carId),  // Győződj meg róla, hogy az ObjectId helyesen van beállítva
-                'date' => new \MongoDB\BSON\UTCDateTime(strtotime($_POST['date']) * 1000),
-                'part' => $_POST['part'],
-                'price' => floatval($_POST['price'])
-            ];
-            
-
-            // Hívás a Model-be, hogy hozzáadjuk az új költséget
-            $result = CarsModel::InsertCarCost($carCost);
-
-            if ($result) 
-            {
-                header("Location: " . Config::KECSO_URL_CARCOST . "?param=" . $carId);
-                exit();
-            } 
-            else 
-            {
-                $view .= '<p>Hiba történt a költség hozzáadása során.</p>';
-            }
-        }
-
-        // Javítási költség szerkesztése
-        if (KecsoRequest::EditCarCost()) 
-        {
-            $costId = $_POST['costId'];
-            $carCost = [
-                'date' => new \MongoDB\BSON\UTCDateTime(strtotime($_POST['date']) * 1000),
-                'part' => $_POST['part'],
-                'price' => floatval($_POST['price'])
-            ];
-
-            $result = CarsModel::UpdateCarCost($costId, $carCost);
-
-            if ($result) 
-            {
-                header("Location: " . Config::KECSO_URL_CARCOST . "?param=" . $carId);
-                exit();
-            } 
-            else 
-            {
-                $view .= '<p>Hiba történt a költség frissítése során.</p>';
-            }
-        }
-
-        // Javítási költség törlése
-        if (KecsoRequest::DeleteCarCost()) 
-        {
-            $costId = $_POST['deleteCostId'];
-            $result = CarsModel::DeleteCarCost($costId);
-
-            if ($result) 
-            {
-                header("Location: " . Config::KECSO_URL_CARCOST . "?param=" . $carId);
-                exit();
-            } 
-            else 
-            {
-                $view .= '<p>Hiba történt a költség törlése során.</p>';
-            }
-        }
+    if (KecsoRequest::CarCostDelete()) {
+        $carcostId = $_POST['deleteCarcostId'];
+        CarsModel::DeleteCarCost($carcostId);
+        header("Location: " . Config::KECSO_URL_CARCOST);
+        exit();
     }
-    
+
+    if (KecsoRequest::CarCostUpdate()) {
+        $editcarcost = CarsModel::GetCarCostById($_POST['updateCarCostId']);
+    }
+
+    if (KecsoRequest::CarCostSave()) {
+        $carcost = [
+            'ids' => $_POST['ids'],
+            'date' => $_POST['date'], 
+            'part' => $_POST['oart'],
+            'cost' => $_POST['cost'],
+        ];
+        CouriorsModel::UpdateCarCost($_POST['editCarcostId'], $carcost);
+        header("Location: " . Config::KECSO_URL_CARCOST);
+        exit();
+    }
+
+    $carcost = CarsModel::GetCarCost();
+    //$view .= KecsoCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate);
+    $view .= KecsoCarView::CarCost($carcost, $editcarcost = null);
     $view .= IndexView::End();
+
     return $view;
 }
 public function couriorData($param): string
@@ -267,7 +235,7 @@ public function couriorData($param): string
                     'mothername' => $mothername
                 ]);
  
-                header("Location: " . $_SERVER['REQUEST_URI']);
+                header("Location: " . Config::KECSO_URL_COURIORDATA);
                 exit();
             } 
            
@@ -280,7 +248,7 @@ public function couriorData($param): string
             {
     // Futár törlése az adatbázisból
                 CouriorsModel::DeleteCouriordata($deleteCouriorId);
-                header("Location: " . $_SERVER['REQUEST_URI']);
+                header("Location: " . Config::KECSO_URL_COURIORDATA);
                 exit();
             }
         }
@@ -299,35 +267,43 @@ public function couriorData($param): string
     
     return $view;
 }
-
 public function courioraddress($param): string
 {
-    // Futár cím kezelése itt
-    /*úgy mint a dispet majd a hónap lesz group szempont csak a sorok száma(napok száma),név,időpont hónap,nap össz cím amivel kiment,leadott cím,véglegvissza,élővissza*/
-    
     $view = IndexView::Begin();
     $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
 
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
+        $startDate = $_POST['startDate'] ?? date('Y-m-01');
+        $endDate = $_POST['endDate'] ?? date('Y-m-t');
+    } else {
+        $startDate = date('Y-m-01');
+        $endDate = date('Y-m-t');
+    }
+
+    $deliveries = CouriorsModel::SumDeliveredAddressesByDateAndGroup($startDate, $endDate);
+    var_dump($deliveries);
     // Futár cím kezelése
     if (KecsoRequest::AddressInsert()) {
         $address = [
-            'day' => $_POST['day'],
+            'name' => $_POST['name'],
+            'ids' => (int)$_POST['ids'], // ids számmá konvertálása
+            'day' => (int)$_POST['day'],
             'month' => $_POST['month'],
             'time' => $_POST['time'],
-            'total_addresses' => $_POST['total_addresses'],
-            'delivered_addresses' => $_POST['delivered_addresses'],
-            'final_return' => $_POST['final_return'],
-            'live_return' => $_POST['live_return']
+            'total_addresses' => (int)$_POST['total_addresses'],
+            'delivered_addresses' => (int)$_POST['delivered_addresses'],
+            'final_return' => (int)$_POST['final_return'],
+            'live_return' => (int)$_POST['live_return']
         ];
         CouriorsModel::InsertAddress($address);
-        header("Location: " . $_SERVER['REQUEST_URI']);
+        header("Location: " . Config::KECSO_URL_COURIORADDRESS);
         exit();
     }
 
     if (KecsoRequest::AddressDelete()) {
         $addressId = $_POST['deleteAddressId'];
         CouriorsModel::DeleteAddress($addressId);
-        header("Location: " . $_SERVER['REQUEST_URI']);
+        header("Location: " . Config::KECSO_URL_COURIORADDRESS);
         exit();
     }
 
@@ -336,26 +312,33 @@ public function courioraddress($param): string
     }
 
     if (KecsoRequest::AddressSave()) {
-            $address = [
-                'day' => $_POST['day'],
-                'month' => $_POST['month'],
-                'time' => $_POST['time'],
-                'total_addresses' => $_POST['total_addresses'],
-                'delivered_addresses' => $_POST['delivered_addresses'],
-                'final_return' => $_POST['final_return'],
-                'live_return' => $_POST['live_return']
-            ];
+        $address = [
+            'name' => $_POST['name'],
+            'ids' => (int)$_POST['ids'], 
+            'day' => (int)$_POST['day'],
+            'month' => $_POST['month'],
+            'time' => $_POST['time'],
+            'total_addresses' => (int)$_POST['total_addresses'],
+            'delivered_addresses' => (int)$_POST['delivered_addresses'],
+            'final_return' => (int)$_POST['final_return'],
+            'live_return' => (int)$_POST['live_return']
+        ];
         CouriorsModel::UpdateAddress($_POST['editAddressId'], $address);
-        header("Location: " . $_SERVER['REQUEST_URI']);
+        header("Location: " . Config::KECSO_URL_COURIORADDRESS);
         exit();
     }
 
     $addresses = CouriorsModel::GetAddresses();
+    $view .= KecsoCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate);
     $view .= KecsoCouriorView::CouriorsAddress($addresses, $editaddress ?? null);
     $view .= IndexView::End();
 
     return $view;
 }
+
+
+
+
 
 public static function depo($param):string
 {

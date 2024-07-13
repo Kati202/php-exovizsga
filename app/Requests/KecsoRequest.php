@@ -13,20 +13,28 @@ class KecsoRequest
     {
         return isset($_POST['deleteCarId']);
     }
-    public static function AddCarCost()
+    public static function CarCostInsert()
     {
-    return isset($_POST['addCarCost'],$_POST['saveCarCost'], $_POST['date'], $_POST['part'], $_POST['price']);
+        return isset($_POST['ids']) && isset($_POST['date']) && isset($_POST['part']) &&
+               isset($_POST['cost']);
+    }
+    public static function CarCostDelete()
+    {
+        return isset($_POST['deleteCarcostId']) && isset($_POST['deleteCarcost']);
     }
 
-    public static function EditCarCost()
+    public static function CarCostUpdate()
     {
-    return isset($_POST['editCarCost'],$_POST['updateCarCost'],$_POST['costId'], $_POST['date'], $_POST['part'], $_POST['price']);
+        return isset($_POST['updateCarCostId']) && isset($_POST['updateCarcost']);
     }
 
-    public static function DeleteCarCost()
+    public static function CarCostSave()
     {
-    return isset($_POST['deleteCostId']);
+        return isset($_POST['editCarcostId']) && isset($_POST['saveCarCos']) &&
+               isset($_POST['ids']) && isset($_POST['date']) && isset($_POST['part']) &&
+               isset($_POST['cost']) && isset($_POST['selectTime']);
     }
+  
 
     //Couriors
     public static function CouriorInsert()
@@ -80,7 +88,7 @@ class KecsoRequest
         return isset($_POST['editAddressId']) && isset($_POST['saveAddress']) &&
                isset($_POST['day']) && isset($_POST['month']) && isset($_POST['time']) &&
                isset($_POST['total_addresses']) && isset($_POST['delivered_addresses']) &&
-               isset($_POST['final_return']) && isset($_POST['live_return']);
+               isset($_POST['final_return']) && isset($_POST['live_return'])&& isset($_POST['selectTime']);
     }
   
     //Depos

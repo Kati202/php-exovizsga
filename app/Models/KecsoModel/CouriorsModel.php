@@ -5,6 +5,7 @@ use App\Requests\Request;
 use MongoDB\Client;
 use App\Config;
 use MongoDB\BSON\ObjectId;
+use MongoDB\BSON\UTCDateTime;
 
 class CouriorsModel
 {
@@ -94,9 +95,29 @@ class CouriorsModel
 //Futár címei
    public static function InsertAddress($address)
     {
-        self::Init(); 
+        self::Init();
         $collection = self::$db->kecsoaddresses;
-        return $collection->insertOne($address);
+
+        // Konvertáljuk az időt UTCDateTime objektummá
+        $time = new UTCDateTime(strtotime($address['time']) * 1000);
+
+        // A name, ids, day, month stb. mezőket közvetlenül használjuk
+        $insertData = [
+            'name' => $address['name'],
+            'ids' => (int)$address['ids'],
+            'day' => (int)$address['day'],
+            'month' => $address['month'],
+            'time' => $time, // Idő UTCDateTime formátumban
+            'total_addresses' => (int)$address['total_addresses'],
+            'delivered_addresses' => (int)$address['delivered_addresses'],
+            'final_return' => (int)$address['final_return'],
+            'live_return' =>(int) $address['live_return']
+        ];
+
+        // Beszúrjuk az adatokat az adatbázisba
+        $result = $collection->insertOne($insertData);
+
+        return $result;
     }
    public static function GetAddresses()
     {
@@ -106,19 +127,41 @@ class CouriorsModel
         return $cursor->toArray();
     }
 
-    /*public static function GetAddressById($id)
+    public static function GetAddressById($id)
     {
         self::Init(); 
         $collection = self::$db->kecsoaddresses;
         return $collection->findOne(['_id' => new ObjectId($id)]);
-    }*/
+    }
 
-    public static function UpdateAddress($id, $data)
+    public static function UpdateAddress($addressId, $address)
     {
-        self::Init(); 
+        self::Init();
         $collection = self::$db->kecsoaddresses;
-        $result = $collection->updateOne(['_id' => new ObjectId($id)], ['$set' => $data]);
-        return $result->getModifiedCount();
+
+        // Konvertáljuk az időt UTCDateTime objektummá
+        $time = new UTCDateTime(strtotime($address['time']) * 1000);
+
+        // A name, ids, day, month stb. mezőket közvetlenül használjuk
+        $updateData = [
+            'name' => $address['name'],
+            'ids' => (int)$address['ids'],
+            'day' => (int)$address['day'],
+            'month' => $address['month'],
+            'time' => $time, // Idő UTCDateTime formátumban
+            'total_addresses' => (int)$address['total_addresses'],
+            'delivered_addresses' => (int)$address['delivered_addresses'],
+            'final_return' => (int)$address['final_return'],
+            'live_return' => (int)$address['live_return']
+        ];
+
+        // Az $addressId alapján frissítjük az adatokat az adatbázisban
+        $result = $collection->updateOne(
+            ['_id' => new \MongoDB\BSON\ObjectID($addressId)],
+            ['$set' => $updateData]
+        );
+
+        return $result;
     }
 
     public static function DeleteAddress($id)
@@ -128,7 +171,54 @@ class CouriorsModel
         $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
         return $result->getDeletedCount();
     }
-    private static function CreateFilterById($id)
+    public static function SumDeliveredAddressesByDateAndGroup($startDate, $endDate)
+    {
+        self::Init();
+
+        $collection = self::$db->kecsoaddresses;
+        
+        $pipeline = [
+            [
+                '$match' => [
+                    'time' => [
+                        '$gte' => new UTCDateTime(strtotime($startDate) * 1000),
+                        '$lte' => new UTCDateTime(strtotime($endDate . ' 23:59:59') * 1000)
+                    ]
+                ]
+            ],
+            [
+                '$group' => [
+                    '_id' => ['$toInt' => '$ids'],
+                    'totalDeliveredAddresses' => ['$sum' => ['$toInt' => '$delivered_addresses']],
+                    'totalTotalAddresses' => ['$sum' => ['$toInt' => '$total_addresses']]
+                ]
+            ]
+        ];
+
+        $result = $collection->aggregate($pipeline)->toArray();
+        var_dump($result);
+    }
+    /*public static function TestMatch($startDate, $endDate)
+{
+    self::Init();
+
+    $collection = self::$db->kecsoaddresses;
+
+    $filter = [
+        'date' => [
+            '$gte' => new UTCDateTime(strtotime($startDate) * 1000),
+            '$lte' => new UTCDateTime(strtotime($endDate . ' 23:59:59') * 1000)
+        ]
+    ];
+
+    $options = [];
+
+    $result = $collection->find($filter, $options)->toArray();
+    var_dump($result); // Ellenőrizzük a találatokat
+
+    return $result;
+}*/
+private static function CreateFilterById($id)
    {
     if(!($id instanceof \MongoDB\BSON\ObjectId))
     {

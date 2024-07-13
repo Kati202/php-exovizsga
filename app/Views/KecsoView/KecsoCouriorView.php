@@ -24,22 +24,41 @@ class KecsoCouriorView
         return $html;
     }
     public static function CouriorData($couriordata, $editcourior = null, $id = null)
-    {
-        $html = '<form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $id . '">';
-        $html .= IndexView::CreateInput('Azonosító','ids');
-        $html .= IndexView::CreateInput('Neve', 'name');
-        $html .= IndexView::CreateInput('Születési ideje', 'date');
-        $html .= IndexView::CreateInput('Születési helye', 'dateaddress');
-        $html .= IndexView::CreateInput('Kora', 'age');
-        $html .= IndexView::CreateInput('Lakcíme', 'address');
-        $html .= IndexView::CreateInput('Anyja neve', 'mothername');
-        $html .= '<button type="submit" name="newCouriors">Futár adat hozzáadása</button>';
-        $html .= '</form>';
-    
-        $html .= self::DisplayCouriorData($couriordata, $editcourior,$id );
-    
-        return $html;
+{
+    $html = '';
+
+    // Csoportosítás az 'ids' kulcs alapján
+    $groupedData = [];
+    foreach ($couriordata as $courior) {
+        $ids = htmlspecialchars($courior->ids ?? '');
+
+        if (!isset($groupedData[$ids])) {
+            $groupedData[$ids] = [];
+        }
+        $groupedData[$ids][] = $courior;
     }
+
+    // Csoportosított adatok megjelenítése
+    foreach ($groupedData as $ids => $couriors) {
+        $html .= '<h3>FutárSz.: ' . htmlspecialchars($ids) . '</h3>';
+        $html .= self::DisplayCouriorGroup($couriors, $editcourior);
+    }
+
+    // Új elem hozzáadása űrlap
+    $html .= '<form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $id . '">';
+    $html .= IndexView::CreateInput('Azonosító', 'ids');
+    $html .= IndexView::CreateInput('Neve', 'name');
+    $html .= IndexView::CreateInput('Születési ideje', 'date');
+    $html .= IndexView::CreateInput('Születési helye', 'dateaddress');
+    $html .= IndexView::CreateInput('Kora', 'age');
+    $html .= IndexView::CreateInput('Lakcíme', 'address');
+    $html .= IndexView::CreateInput('Anyja neve', 'mothername');
+    $html .= '<button type="submit" name="newCouriors">Futár adat hozzáadása</button>';
+    $html .= '</form>';
+
+    return $html;
+}
+
     
     public static function CouriorEdit($courior)
 {
@@ -61,59 +80,53 @@ class KecsoCouriorView
 }
 
      
-private static function DisplayCouriorData($couriordata, $editcourior = null,$id = null)
+private static function DisplayCouriorGroup($couriors, $editcourior = null)
 {
     $html = '';
 
-    if (!empty($couriordata)) {
-        $html .= '<table border="1" cellpadding="10">
-                    <thead>
-                        <tr>
-                            <th>Azonosító</th>
-                            <th>Neve</th>
-                            <th>Születési ideje</th>
-                            <th>Születési helye</th>
-                            <th>Kora</th>
-                            <th>Lakcíme</th>
-                            <th>Anyja Neve</th>
-                            <th>Műveletek</th>
-                        </tr>
-                    </thead>
-                    <tbody>';
+    $html .= '<table border="1" cellpadding="10">
+                <thead>
+                    <tr>
+                        <th>Neve</th>
+                        <th>Születési ideje</th>
+                        <th>Születési helye</th>
+                        <th>Kora</th>
+                        <th>Lakcíme</th>
+                        <th>Anyja Neve</th>
+                        <th>Műveletek</th>
+                    </tr>
+                </thead>
+                <tbody>';
 
-        foreach ($couriordata as $courior) {
-            $couriorId =(string)($courior->_id ?? '');
+    foreach ($couriors as $courior) {
+        $couriorId = (string)($courior->_id ?? '');
 
-            $html .= '<tr>
-                        <td>' . htmlspecialchars($courior->ids ?? '') . '</td>
-                        <td>' . htmlspecialchars($courior->name ?? '') . '</td>
-                        <td>' . htmlspecialchars($courior->date ?? '') . '</td>
-                        <td>' . htmlspecialchars($courior->dateaddress ?? '') . '</td>
-                        <td>' . htmlspecialchars($courior->age ?? '') . '</td>
-                        <td>' . htmlspecialchars($courior->address ?? '') . '</td>
-                        <td>' . htmlspecialchars($courior->mothername ?? '') . '</td>
-                        <td>
-                           <form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $couriorId . '" style="display:inline;">
-                                <input type="hidden" name="updateCouriorId" value="' . htmlspecialchars($couriorId) . '">
-                                <button type="submit" name="updateCourior">Szerkesztés</button>
-                            </form>
-                            <form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $couriorId . '" style="display:inline;">
-                                <input type="hidden" name="deleteCouriorId" value="' . htmlspecialchars($couriorId) . '">
-                                <button type="submit" name="deleteCourior">Törlés</button>
-                            </form>
-                        </td>
-                      </tr>';
+        $html .= '<tr>
+                    <td>' . htmlspecialchars($courior->name ?? '') . '</td>
+                    <td>' . htmlspecialchars($courior->date ?? '') . '</td>
+                    <td>' . htmlspecialchars($courior->dateaddress ?? '') . '</td>
+                    <td>' . htmlspecialchars($courior->age ?? '') . '</td>
+                    <td>' . htmlspecialchars($courior->address ?? '') . '</td>
+                    <td>' . htmlspecialchars($courior->mothername ?? '') . '</td>
+                    <td>
+                        <form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $couriorId . '" style="display:inline;">
+                            <input type="hidden" name="updateCouriorId" value="' . htmlspecialchars($couriorId) . '">
+                            <button type="submit" name="updateCourior">Szerkesztés</button>
+                        </form>
+                        <form method="post" action="' . Config::KECSO_URL_COURIORDATA . '?param=' . $couriorId . '" style="display:inline;">
+                            <input type="hidden" name="deleteCouriorId" value="' . htmlspecialchars($couriorId) . '">
+                            <button type="submit" name="deleteCourior">Törlés</button>
+                        </form>
+                    </td>
+                  </tr>';
 
-            // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
-            if ($editcourior && $editcourior['_id'] == $couriorId) {
-                $html .= '<tr><td colspan="7">' . self::CouriorEdit($editcourior) . '</td></tr>';
-            }
+        // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
+        if ($editcourior && $editcourior['_id'] == $couriorId) {
+            $html .= '<tr><td colspan="7">' . self::CouriorEdit($editcourior) . '</td></tr>';
         }
-
-        $html .= '</tbody></table>';
-    } else {
-        $html .= '<p>Nincsenek futár adatok.</p>';
     }
+
+    $html .= '</tbody></table>';
 
     return $html;
 }
@@ -153,9 +166,9 @@ private static function DisplayCouriors()
         $html = '';
         $groupedData = self::GroupDataAddress($addresses);
        
-        foreach ($groupedData as $month => $items) 
+        foreach ($groupedData as $ids => $items) 
         {
-            $html .= self::DisplayAddressGroup($month, $items, $editaddress);
+            $html .= self::DisplayAddressGroup($ids, $items, $editaddress);
         }
     
         $html .= self::CreateAddressForm();
@@ -165,10 +178,11 @@ private static function DisplayCouriors()
     private static function GroupDataAddress($addresses)
     {
         $groupedData = [];
-
+    
         foreach ($addresses as $address) {
-            if ($address instanceof \MongoDB\Model\BSONDocument) 
-            {
+            if ($address instanceof \MongoDB\Model\BSONDocument && isset($address['ids'])) {
+                $ids = $address['ids'];
+                $name = $address['name'];
                 $month = $address['month'];
                 $day = $address['day'];
                 $time = $address['time'];
@@ -178,20 +192,20 @@ private static function DisplayCouriors()
                 $live_return = $address['live_return'];
                 $id = (string) $address['_id'];
     
-                if (!isset($groupedData[$month])) 
-                {
-                    $groupedData[$month] = [];
+                if (!isset($groupedData[$ids])) {
+                    $groupedData[$ids] = [];
                 }
-                $groupedData[$month][] = 
-                [
+                $groupedData[$ids][] = [
+                    'ids' => $ids,
+                    'name' => $name,
                     'day' => $day,
-                    'month'=>$month,
+                    'month' => $month,
                     'time' => $time,
                     'total_addresses' => $total_addresses,
                     'delivered_addresses' => $delivered_addresses,
                     'final_return' => $final_return,
                     'live_return' => $live_return,
-                    '_id' => $id, 
+                    '_id' => $id,
                 ];
             }
         }
@@ -199,48 +213,59 @@ private static function DisplayCouriors()
         return $groupedData;
     }
     
-    private static function DisplayAddressGroup($month, $items, $editaddress)
+    private static function DisplayAddressGroup($ids, $items, $editaddress)
     {
-        $html = '<h2>' . htmlspecialchars($month ?? '') . '</h2>';
-       
+        $html = '';
+    
+        if (!empty($ids)) {
+            $html .= '<h2>' . htmlspecialchars($ids) . '</h2>';
+        }
+    
         $html .= '<table border="1" cellpadding="10">
                     <thead>
-                    <tr>
-                        <th>Ledolgozott nap</th>
-                        <th>Hónap</th>
-                        <th>Pontos időpont</th>
-                        <th>Össz cím</th>
-                        <th>Kézbesített címek </th>
-                        <th>Véglegvissza</th>
-                        <th>Élővissza</th>
-                        <th>Műveletek</th>
-                    </tr>
+                        <tr>
+                            <th>Név</th>
+                            <th>Futár Azonosító</th>
+                            <th>Ledolgozott nap</th>
+                            <th>Hónap</th>
+                            <th>Pontos időpont</th>
+                            <th>Össz cím</th>
+                            <th>Kézbesített címek </th>
+                            <th>Véglegvissza</th>
+                            <th>Élővissza</th>
+                            <th>Műveletek</th>
+                        </tr>
                     </thead>
                     <tbody>';
     
         foreach ($items as $item) {
             $html .= '<tr>
-                        <td>' . htmlspecialchars($item['day']) . '</td>
-                        <td>' . htmlspecialchars($item['month']) . '</td>
-                        <td>' . htmlspecialchars($item['time']) . '</td>
-                        <td>' . htmlspecialchars($item['total_addresses']) . '</td>
-                        <td>' . htmlspecialchars($item['delivered_addresses']) . '</td>
-                        <td>' . htmlspecialchars($item['final_return']) . '</td>
-                        <td>' . htmlspecialchars($item['live_return']) . '</td>
+                        <td>' . htmlspecialchars($item['name'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['ids'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['day'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['month'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['time'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['total_addresses'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['delivered_addresses'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['final_return'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['live_return'] ?? '') . '</td>
                         <td>
-                            <form method="post" action="' . Config::KECSO_URL_COURIORADDRESS . '" style="display:inline;">
-                                <input type="hidden" name="updateAddressId" value="' . $item['_id'] . '">
-                                <button type="submit" name="updateAddress">Szerkesztés</button>
+                            <form method="post" action="' . Config::KECSO_URL_COURIORADDRESS . '?operation=courioraddress&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
+                             <input type="hidden" name="updateAddressId" value="' . ($item['_id'] ?? '') . '">
+                             <button type="submit" name="updateAddress">Szerkesztés</button>
                             </form>
-                            <form method="post" action="' . Config::KECSO_URL_COURIORADDRESS . '" style="display:inline;">
-                                <input type="hidden" name="deleteAddressId" value="' . $item['_id'] . '">
+                                <form method="post" action="' . Config::KECSO_URL_COURIORADDRESS . '" style="display:inline;">
+                                <input type="hidden" name="deleteAddressId" value="' . ($item['_id'] ?? '') . '">
+                                <input type="hidden" name="operation" value="courioraddress">
+                                <input type="hidden" name="param" value="' . ($item['_id'] ?? '') . '">
                                 <button type="submit" name="deleteAddress">Törlés</button>
                             </form>
                         </td>
                     </tr>';
     
+            // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
             if ($editaddress && $editaddress['_id'] == $item['_id']) {
-                $html .= '<tr><td colspan="8">' . self::AddressEdit($editaddress) . '</td></tr>';
+                $html .= '<tr><td colspan="10">' . self::AddressEdit($editaddress) . '</td></tr>';
             }
         }
     
@@ -249,36 +274,82 @@ private static function DisplayCouriors()
         return $html;
     }
     
-    private static function CreateAddressForm()
+    public static function CreateAddressForm()
     {
         $html = '<form method="post" action="' . Config::KECSO_URL_COURIORADDRESS . '">';
+        $html .= IndexView::CreateInput('Név', 'name');
+        $html .= IndexView::CreateInput('Azonosító', 'ids');
         $html .= IndexView::CreateInput('Ledolgozott nap száma', 'day');
-        $html .= IndexView::CreateInput('Időpont', 'time');
         $html .= IndexView::CreateInput('Hónap', 'month');
+        $html .= '<label for="time">Pontos időpont:</label>';
+        $html .= '<input type="datetime-local" id="time" name="time">';
         $html .= IndexView::CreateInput('Össz cím', 'total_addresses');
         $html .= IndexView::CreateInput('Kézbesített címek', 'delivered_addresses');
         $html .= IndexView::CreateInput('Véglegvissza', 'final_return');
         $html .= IndexView::CreateInput('Élővissza', 'live_return');
         $html .= '<button type="submit" name="newAddress">Új cím hozzáadása</button>';
         $html .= '</form>';
-
+    
         return $html;
     }
-    
-    public static function AddressEdit($editaddress)
+
+    private static function AddressEdit($editaddress)
     {
         $html = '<form method="post" action="' . Config::KECSO_URL_COURIORADDRESS . '">';
         $html .= '<input type="hidden" name="editAddressId" value="' . $editaddress['_id'] . '">';
-        $html .= IndexView::CreateInputValue('Napok száma', 'day', $editaddress['day']);
+        $html .= IndexView::CreateInputValue('Név', 'name', $editaddress['name']);
+        $html .= IndexView::CreateInputValue('Azonosító', 'ids', $editaddress['ids']);
+        $html .= IndexView::CreateInputValue('Ledolgozott nap száma', 'day', $editaddress['day']);
         $html .= IndexView::CreateInputValue('Hónap', 'month', $editaddress['month']);
-        $html .= IndexView::CreateInputValue('Időpont', 'time', $editaddress['time']);
+        $html .= '<label for="time">Pontos időpont:</label>';
+        $html .= '<input type="datetime-local" id="time" name="time" value="' . date('Y-m-d\TH:i', strtotime($editaddress['time'])) . '">';
         $html .= IndexView::CreateInputValue('Össz cím', 'total_addresses', $editaddress['total_addresses']);
-        $html .= IndexView::CreateInputValue('Leadott cím', 'delivered_addresses', $editaddress['delivered_addresses']);
+        $html .= IndexView::CreateInputValue('Kézbesített címek', 'delivered_addresses', $editaddress['delivered_addresses']);
         $html .= IndexView::CreateInputValue('Véglegvissza', 'final_return', $editaddress['final_return']);
         $html .= IndexView::CreateInputValue('Élővissza', 'live_return', $editaddress['live_return']);
         $html .= '<button type="submit" name="saveAddress">Mentés</button>';
         $html .= '</form>';
+    
+        return $html;
+    }
+ public static function ShowDeliveriesByGroup($deliveries, $startDate, $endDate)
+    {
+        $html = '<h2>Kézbesítések összesítése az időszakra (' . $startDate . ' - ' . $endDate . ')</h2>';
+
+        if (!empty($deliveries)) {
+            $html .= '<table border="1" cellpadding="10">
+                        <thead>
+                            <tr>
+                                <th>Azonosító</th>
+                                <th>Összesen kézbesített címek száma</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+
+            foreach ($deliveries as $delivery) {
+                $html .= '<tr>
+                            <td>' . htmlspecialchars($delivery['_id'] ?? '') . '</td>
+                            <td>' . htmlspecialchars($delivery['totalDeliveredAddresses'] ?? '') . '</td>
+                          </tr>';
+            }
+
+            $html .= '</tbody></table>';
+        } else {
+            $html .= '<p>Nincs adat az időszakra.</p>';
+        }
+
+        // Időszak kiválasztó űrlap megjelenítése
+        $html .= '<form method="post" action="' . Config::KECSO_URL_COURIORADDRESS . '">
+                    <label for="startDate">Kezdő dátum:</label>
+                    <input type="date" id="startDate" name="startDate" value="' . htmlspecialchars($startDate) . '">
+                    <label for="endDate">Vég dátum:</label>
+                    <input type="date" id="endDate" name="endDate" value="' . htmlspecialchars($endDate) . '">
+                    <button type="selectTime">Szűrés</button>
+                  </form>';
 
         return $html;
     }
+
+    
+   
 }

@@ -1,9 +1,11 @@
 <?php
 namespace App\Models\KecsoModel;
 
+use App\Requests\Request;
 use MongoDB\Client;
-use MongoDB\BSON\ObjectId;
 use App\Config;
+use MongoDB\BSON\ObjectId;
+use MongoDB\BSON\UTCDateTime;
 
 class CarsModel
 {
@@ -85,69 +87,103 @@ private static function isValidObjectId($id)
 {
     return preg_match('/^[a-f\d]{24}$/i', $id);
 }
-   
-    public static function InsertCarCost($carCost)
-    {
+//CarCost   
+public static function InsertCarCost($carcost)
+{
     self::Init();
-    $collection = self::$db->kecsocar_cost;
+    $collection = self::$db->kecsocarcost;
 
-    // Konvertáljuk a dátumot UTCDateTime formátumba
-    $timestamp = strtotime($carCost['date']);
-    $milliseconds = $timestamp * 1000;
-    $carCost['date'] = new \MongoDB\BSON\UTCDateTime($milliseconds);
+    // Konvertáljuk az időt UTCDateTime objektummá
+    $time = new UTCDateTime(strtotime($carcost['date']) * 1000);
 
-    $result = $collection->insertOne($carCost);
-    return $result->getInsertedCount() > 0;
-    }
+    // A name, ids, day, month stb. mezőket közvetlenül használjuk
+    $insertData =
+     [
+        'ids' => $carcost['ids'],
+        'date' => $date,  
+        'part' => $carcost['part'],
+        'cost' => $carcost['cost'],
+    ];
 
-    public static function GetCarCosts($carId)
-    {
-        self::Init();
-        $collection = self::$db->kecsocar_cost;
-        $carCosts = $collection->find(['_id' => new ObjectId($carId)]);
+    // Beszúrjuk az adatokat az adatbázisba
+    $result = $collection->insertOne($insertData);
+
+    return $result;
+}
+public static function GetCarCost()
+{
+    self::Init(); 
+    $collection = self::$db->kecsocarcost;
+    $cursor = $collection->find();
+    return $cursor->toArray();
+}
+
+public static function GetCarCostById($id)
+{
+    self::Init(); 
+    $collection = self::$db->kecsocarcost;
+    return $collection->findOne(['_id' => new ObjectId($id)]);
+}
+
+public static function UpdateCarCost($carcostId, $carcost)
+{
+    self::Init();
+    $collection = self::$db->kecsocarcost;
+
+    // Konvertáljuk az időt UTCDateTime objektummá
+    $time = new UTCDateTime(strtotime($address['date']) * 1000);
+
+    // A name, ids, day, month stb. mezőket közvetlenül használjuk
+    $updateData = 
+    [
+        'ids' => $carcost['ids'],
+        'date' => $date,  
+        'part' => $carcost['part'],
+        'cost' => $carcost['cost'],
+    ];
+
+    // Az $addressId alapján frissítjük az adatokat az adatbázisban
+    $result = $collection->updateOne(
+        ['_id' => new \MongoDB\BSON\ObjectID($carcostId)],
+        ['$set' => $updateData]
+    );
+
+    return $result;
+}
+
+public static function DeleteCarCost($id)
+{
+    self::Init(); 
+    $collection = self::$db->kecsocarcost;
+    $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
+    return $result->getDeletedCount();
+}
+/*public static function SumDeliveredAddressesByDateAndGroup($startDate, $endDate)
+{
+    self::Init();
+
+    $collection = self::$db->kecsoaddresses;
     
-        $costs = [];
-        foreach ($carCosts as $cost) {
-            $costs[] = 
-            [
-                '_id' => (string) $cost['_id'],
-                'date' => $cost['date']->toDateTime()->format('Y-m-d H:i:s'),  
-                'part' => $cost['part'],
-                'price' => $cost['price']
-            ];
-        }
-        var_dump($costs);
-    
-        return $costs;
-    }
+    $pipeline = [
+        [
+            '$match' => [
+                'time' => [
+                    '$gte' => new UTCDateTime(strtotime($startDate) * 1000),
+                    '$lte' => new UTCDateTime(strtotime($endDate . ' 23:59:59') * 1000)
+                ]
+            ]
+        ],
+        [
+            '$group' => [
+                '_id' => ['$toInt' => '$ids'],
+                'totalDeliveredAddresses' => ['$sum' => ['$toInt' => '$delivered_addresses']],
+                'totalTotalAddresses' => ['$sum' => ['$toInt' => '$total_addresses']]
+            ]
+        ]
+    ];
 
-    public static function UpdateCarCost($costId, $carCost)
-    {
-        self::Init();
-        $collection = self::$db->kecsocar_cost;
-    
-        // Konvertáljuk a dátumot UTCDateTime formátumba
-        $timestamp = strtotime($carCost['date']);
-        $milliseconds = $timestamp * 1000;
-        $carCost['date'] = new \MongoDB\BSON\UTCDateTime($milliseconds);
-    
-        $result = $collection->updateOne(
-            ['_id' => new ObjectId($costId)],
-            ['$set' => [
-                'date' => $carCost['date'],
-                'part' => $carCost['part'],
-                'price' => $carCost['price']
-            ]]
-        );
-        return $result->getModifiedCount();
-    }
-
-    public static function DeleteCarCost($costId)
-    {
-        self::Init();
-        $collection = self::$db->kecsocar_cost;
-        $result = $collection->deleteOne(['_id' => new ObjectId($costId)]);
-        return $result->getDeletedCount();
-    }
+    $result = $collection->aggregate($pipeline)->toArray();
+    var_dump($result);
+}*/
 }
 ?>

@@ -86,35 +86,7 @@ public static function CarData($carId)
 
     return $html;
    }
-    public static function CarCost($carId)
-    { 
-        $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '?param=' . htmlspecialchars($carId) . '">';
-        $html .= IndexView::CreateInput('Időpont', 'date');
-        $html .= IndexView::CreateInput('Alkatrész', 'part');
-        $html .= IndexView::CreateInput('Ár', 'price');
-        $html .= '<button type="submit" name="addCarCost">Költség hozzáadása</button>';
-        $html .= '</form>';
-
-        // Javítási költségek listázása
-        $html .= self::DisplayCarCosts($carId);
-
-        return $html;
-    }
-    public static function CarCostEdit($carCost)
-    { 
-        $carId = null;
-        
-        $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '">';
-        $html .= '<input type="hidden" name="editCostId" value="' . htmlspecialchars($carCost['_id']) . '">';
-        $html .= IndexView::CreateInputValue('Időpont', 'date', date('Y-m-d H:i:s', $carCost['date']->toDateTime()->getTimestamp()));
-        $html .= IndexView::CreateInputValue('Alkatrész', 'part', htmlspecialchars($carCost['part']));
-        $html .= IndexView::CreateInputValue('Ár', 'price', htmlspecialchars($carCost['price']));
-        $html .= '<button type="submit" name="saveCarCost">Mentés</button>';
-        $html .= '</form>';
-    
-        return $html;
-    }
-    
+  
     private static function ListUploadedImages($carId)
 {
     $uploadDir = 'uploads/kecso/';
@@ -168,63 +140,159 @@ public static function CarData($carId)
         return $html;
     }
    
-    
-    private static function DisplayCarCosts($carId, $editCarCost = null)
+    public static function CarCost($carcost, $editcarcost = null)
     {
-        $carCosts = CarsModel::GetCarCosts($carId);
-    
-        usort($carCosts, function($a, $b) {
-            return strcmp($a['part'], $b['part']);
-        });
-    
-        $html = '<h3>Rögzített javítási költségek:</h3>';
-    
-        if (!empty($carCosts)) 
+        $html = '';
+        $groupedData = self::GroupDataCarCost($carcost);
+       
+        foreach ($groupedData as $ids => $items) 
         {
-            $html .= '<table border="1" cellpadding="10">
-                        <thead>
-                            <tr>
-                                <th>Időpont</th>
-                                <th>Alkatrész</th>
-                                <th>Ár</th>
-                                <th>Műveletek</th>
-                            </tr>
-                        </thead>
-                        <tbody>';
-    
-            foreach ($carCosts as $cost) 
-            {
-                $html .= '<tr>
-                            <td>' . date('Y-m-d H:i:s', $cost['date']->toDateTime()->getTimestamp()) . '</td>
-                            <td>' . htmlspecialchars($cost['part']) . '</td>
-                            <td>' . htmlspecialchars($cost['price']) . '</td>
-                            <td>
-                                <form method="post" action="' . Config::KECSO_URL_CARCOST . '?param=' . htmlspecialchars($carId) . '" style="display:inline;">
-                                    <input type="hidden" name="costId" value="' . htmlspecialchars($cost['_id']) . '">
-                                    <button type="submit" name="updateCarCost">Szerkesztés</button>
-                                </form>
-                                <form method="post" action="' . Config::KECSO_URL_CARCOST . '?param=' . htmlspecialchars($carId) . '" style="display:inline;">
-                                    <input type="hidden" name="deleteCostId" value="' . htmlspecialchars($cost['_id']) . '">
-                                    <button type="submit" name="deleteCost">Törlés</button>
-                                </form>
-                            </td>
-                        </tr>';
-    
-                // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
-                if ($editCarCost && $editCarCost['_id'] == $cost['_id']) 
-                {
-                    $html .= '<tr><td colspan="4">' . self::CarCostEdit($editCarCost) . '</td></tr>';
-                }
-            }
-    
-            $html .= '</tbody></table>';
-        } 
-        else 
-        {
-            $html .= '<p>Nincsenek rögzített javítási költségek.</p>';
+            $html .= self::DisplayCarCostGroup($ids, $items, $editcarcost);
         }
+    
+        $html .= self::CreateCarCostForm();
+        return $html;
+    }
+    
+    private static function GroupDataCarCost($carcost)
+    {
+        $groupedData = [];
+
+        foreach ($carcost as $car) {
+            // Csoportosítás logikája
+            $ids = $car['ids'];
+            // További adatok csoportosítása
+            if (!isset($groupedData[$ids])) {
+                $groupedData[$ids] = [];
+            }
+            $groupedData[$ids][] = [
+                'ids' => $car['ids'],
+                'date' => $car['date'],
+                'part' => $car['part'],
+                'cost' => $car['cost'],
+               '_id' => (string) $car['_id'], // MongoDB ObjectId stringgé alakítása
+            ];
+        }
+
+        return $groupedData;
+    }
+    
+    private static function DisplayCarCostGroup($ids, $items, $editcarcost)
+    {
+        $html = '';
+    
+        if (!empty($ids)) {
+            $html .= '<h2>' . htmlspecialchars($ids) . '</h2>';
+        }
+    
+        $html .= '<table border="1" cellpadding="10">
+                    <thead>
+                        <tr>
+                            <th>Rendszám</th>
+                            <th>Időpont</th>
+                            <th>Alkatrész</th>
+                            <th>Költségek</th>
+                            <th>Műveletek</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+    
+        foreach ($items as $item) {
+            $html .= '<tr>
+                        <td>' . htmlspecialchars($item['ids'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['date'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['part'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($item['cost'] ?? '') . '</td>
+                        <td>
+                            <form method="post" action="' . Config::KECSO_URL_CARCOST . '?operation=couriorcarcost&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
+                             <input type="hidden" name="updateCarCostId" value="' . ($item['_id'] ?? '') . '">
+                             <button type="submit" name="updateCarcost">Szerkesztés</button>
+                            </form>
+                                <form method="post" action="' . Config::KECSO_URL_CARCOST . '" style="display:inline;">
+                                <input type="hidden" name="deleteCarcostId" value="' . ($item['_id'] ?? '') . '">
+                                <input type="hidden" name="operation" value="carcost">
+                                <input type="hidden" name="param" value="' . ($item['_id'] ?? '') . '">
+                                <button type="submit" name="deleteCarcost">Törlés</button>
+                            </form>
+                        </td>
+                    </tr>';
+    
+            // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
+            if ($editcarcost && $editcarcost['_id'] == $item['_id']) {
+                $html .= '<tr><td colspan="10">' . self::CarCostEdit($editcarcost) . '</td></tr>';
+            }
+        }
+    
+        $html .= '</tbody></table>';
     
         return $html;
     }
+    
+    public static function CreateCarCostForm()
+    {
+        $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '">';
+        $html .= IndexView::CreateInput('Rendszám', 'ids');
+        $html .= '<label for="date">Időpont:</label>';
+        $html .= '<input type="datetime-local" id="date" name="date">';
+        $html .= IndexView::CreateInput('Alkatrész', 'part');
+        $html .= IndexView::CreateInput('Ára', 'cost');
+        $html .= '<button type="submit" name="newCost">Új költség hozzáadása</button>';
+        $html .= '</form>';
+    
+        return $html;
+    }
+
+    private static function CarCostEdit($editcarcost)
+    {
+        $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '">';
+        $html .= '<input type="hidden" name="editCarcostId" value="' . $editcarcost['_id'] . '">';
+        $html .= IndexView::CreateInputValue('Rendszám', 'ids', $editcarcost['ids']);
+        $html .= '<label for="date">Időpont:</label>';
+        $html .= '<input type="datetime-local" id="date" name="date" value="' . date('Y-m-d\TH:i', strtotime($editcarcost['date'])) . '">';
+        $html .= IndexView::CreateInputValue('Alkatrész', 'part', $editcarcost['part']);
+        $html .= IndexView::CreateInputValue('Ára', 'cost', $editcarcost['cost']);
+        $html .= '<button type="submit" name="saveCarCost">Mentés</button>';
+        $html .= '</form>';
+    
+        return $html;
+    }
+  /*public static function ShowDeliveriesByGroup($deliveries, $startDate, $endDate)
+    {
+        $html = '<h2>Kézbesítések összesítése az időszakra (' . $startDate . ' - ' . $endDate . ')</h2>';
+
+        if (!empty($deliveries)) {
+            $html .= '<table border="1" cellpadding="10">
+                        <thead>
+                            <tr>
+                                <th>Azonosító</th>
+                                <th>Összesen kézbesített címek száma</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+
+            foreach ($deliveries as $delivery) {
+                $html .= '<tr>
+                            <td>' . htmlspecialchars($delivery['_id'] ?? '') . '</td>
+                            <td>' . htmlspecialchars($delivery['totalDeliveredAddresses'] ?? '') . '</td>
+                          </tr>';
+            }
+
+            $html .= '</tbody></table>';
+        } else {
+            $html .= '<p>Nincs adat az időszakra.</p>';
+        }
+
+        // Időszak kiválasztó űrlap megjelenítése
+        $html .= '<form method="post" action="' . Config::KECSO_URL_CARCOST . '">
+                    <label for="startDate">Kezdő dátum:</label>
+                    <input type="date" id="startDate" name="startDate" value="' . htmlspecialchars($startDate) . '">
+                    <label for="endDate">Vég dátum:</label>
+                    <input type="date" id="endDate" name="endDate" value="' . htmlspecialchars($endDate) . '">
+                    <button type="selectTime">Szűrés</button>
+                  </form>';
+
+        return $html;
+    }*/
+
 }
   
