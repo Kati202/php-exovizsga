@@ -43,19 +43,19 @@ class IndexView
          <button type="submit" name="confirmDelete">Igen, törlöm</button>
          </form>';
     }
-    public static function CreateInput($text, $name)
-    {
-        if ($name === 'total_addresses' || $name === 'delivered_addresses' || $name === 'final_return' || $name === 'live_return') {
-            return '<div>
-                        <label for="' . $name . '">' . $text . '</label>
-                        <input type="number" name="' . $name . '" id="' . $name . '">
-                    </div>';
-        } else {
-            return '<div>
-                        <label for="' . $name . '">' . $text . '</label>
-                        <input type="text" name="' . $name . '" id="' . $name . '">
-                    </div>';
-        }
+    public static function CreateInput($text, $name, $placeholder = '')
+   {
+    if ($name === 'total_addresses' || $name === 'delivered_addresses' || $name === 'final_return' || $name === 'live_return') {
+        return '<div>
+                    <label for="' . $name . '">' . $text . '</label>
+                    <input type="number" name="' . $name . '" id="' . $name . '" placeholder="' . htmlspecialchars($placeholder) . '">
+                </div>';
+    } else {
+        return '<div>
+                    <label for="' . $name . '">' . $text . '</label>
+                    <input type="text" name="' . $name . '" id="' . $name . '" placeholder="' . htmlspecialchars($placeholder) . '">
+                </div>';
+    }
     }
     public static function CreateHiddenInput($name,$value)
     {

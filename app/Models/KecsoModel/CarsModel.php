@@ -21,14 +21,17 @@ class CarsModel
         }
     }
 
-    
-
     public static function InsertCar($car)
-    {
-        self::Init();
-        $collection = self::$db->kecsocar;
+   {
+    self::Init();
+    $collection = self::$db->kecsocar;
+    
+    $existingCar = $collection->findOne(['ids' => $car['ids']]);
+    
+    if ($existingCar === null) {
+        // Ha nincs még ilyen ids, akkor hozzáadjuk az autót
         $result = $collection->insertOne($car);
-        return $result->getInsertedId(); // Visszatérési érték lehet az újonnan beszúrt dokumentum _id-je
+        return $result;}
     }
 
     public static function GetCars()
@@ -74,13 +77,10 @@ class CarsModel
     $collection = self::$db->kecsocar_images;
 
     // Validate the carId
-    if (!self::isValidObjectId($carId)) {
-        throw new InvalidArgumentException("Invalid ObjectId string: $carId");
-    }
-    var_dump($carId);
+   
 
-    $car = $collection->findOne(['_id' => new ObjectId($carId)]);
-    return isset($car['images']) ? $car['images'] : [];
+    //$car = $collection->findOne(['_id' => new ObjectId($carId)]);
+    //return isset($car['images']) ? $car['images'] : [];
 }
 
 private static function isValidObjectId($id)
@@ -94,7 +94,7 @@ public static function InsertCarCost($carcost)
     $collection = self::$db->kecsocarcost;
 
     // Konvertáljuk az időt UTCDateTime objektummá
-    $time = new UTCDateTime(strtotime($carcost['date']) * 1000);
+    $date = new UTCDateTime(strtotime($carcost['date']) * 1000);
 
     // A name, ids, day, month stb. mezőket közvetlenül használjuk
     $insertData =
@@ -131,7 +131,7 @@ public static function UpdateCarCost($carcostId, $carcost)
     $collection = self::$db->kecsocarcost;
 
     // Konvertáljuk az időt UTCDateTime objektummá
-    $time = new UTCDateTime(strtotime($address['date']) * 1000);
+    $date = new UTCDateTime(strtotime($address['date']) * 1000);
 
     // A name, ids, day, month stb. mezőket közvetlenül használjuk
     $updateData = 
@@ -142,7 +142,7 @@ public static function UpdateCarCost($carcostId, $carcost)
         'cost' => $carcost['cost'],
     ];
 
-    // Az $addressId alapján frissítjük az adatokat az adatbázisban
+    
     $result = $collection->updateOne(
         ['_id' => new \MongoDB\BSON\ObjectID($carcostId)],
         ['$set' => $updateData]
@@ -158,11 +158,11 @@ public static function DeleteCarCost($id)
     $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
     return $result->getDeletedCount();
 }
-/*public static function SumDeliveredAddressesByDateAndGroup($startDate, $endDate)
+public static function SumCostByDateAndGroup($startDate, $endDate)
 {
     self::Init();
 
-    $collection = self::$db->kecsoaddresses;
+    $collection = self::$db->kecsocarcost;
     
     $pipeline = [
         [
@@ -176,14 +176,13 @@ public static function DeleteCarCost($id)
         [
             '$group' => [
                 '_id' => ['$toInt' => '$ids'],
-                'totalDeliveredAddresses' => ['$sum' => ['$toInt' => '$delivered_addresses']],
-                'totalTotalAddresses' => ['$sum' => ['$toInt' => '$total_addresses']]
-            ]
+                'costsum' => ['$sum' => ['$toInt' => '$cost']],
+             ]
         ]
     ];
 
     $result = $collection->aggregate($pipeline)->toArray();
     var_dump($result);
-}*/
+}
 }
 ?>

@@ -112,7 +112,7 @@ public static function Disp($dispdata,$editdisp=null)
     $html = '<form method="post" action="' . Config::KECSO_URL_DISP . '">';
     $html .= IndexView::CreateInput('Név','name');
     $html .= IndexView::CreateInput('Munkaterület', 'title');
-    $html .= IndexView::CreateInput('Telefonszám', 'phone');
+    $html .= IndexView::CreateInput('Telefonszám', 'phone','pl:06205674575');
     $html .= '<button type="submit" name="newDisp">Diszpécser adat hozzáadása</button>';
     $html .= '</form>';
 

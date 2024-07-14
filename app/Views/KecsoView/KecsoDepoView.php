@@ -23,12 +23,12 @@ class KecsoDepoView
     }
     public static function ShowDepoButton()
     {
-     $html = '<form method="post" action="' . Config::KECSO_URL_DEPO . '">';
+     $html = '<form method="post" action="' . Config::KECSO_URL_DEPO  . '">';
      $html .= '<button type="submit" name="showDepo">Depó adatok megtekintése</button>';
      $html .= '</form>';
  
      return $html;
-    }
+    } 
     public static function DepoEdit($depo)
    {
         $html = '<form method="post" action="' . Config::KECSO_URL_DEPO .'">';

@@ -6,7 +6,7 @@ class KecsoRequest
     //Cars
     public static function CarsInsert()
     {
-        return isset($_POST['license']);
+        return isset($_POST['ids'],$_POST['newCar']);
     }
 
     public static function CarsDelete()
@@ -30,7 +30,7 @@ class KecsoRequest
 
     public static function CarCostSave()
     {
-        return isset($_POST['editCarcostId']) && isset($_POST['saveCarCos']) &&
+        return isset($_POST['editCarCostId']) && isset($_POST['saveCarCost']) &&
                isset($_POST['ids']) && isset($_POST['date']) && isset($_POST['part']) &&
                isset($_POST['cost']) && isset($_POST['selectTime']);
     }
@@ -88,13 +88,13 @@ class KecsoRequest
         return isset($_POST['editAddressId']) && isset($_POST['saveAddress']) &&
                isset($_POST['day']) && isset($_POST['month']) && isset($_POST['time']) &&
                isset($_POST['total_addresses']) && isset($_POST['delivered_addresses']) &&
-               isset($_POST['final_return']) && isset($_POST['live_return'])&& isset($_POST['selectTime']);
+               isset($_POST['final_return']) && isset($_POST['live_return']);
     }
   
     //Depos
     public static function DepoInsert()
     {
-      return isset($_POST['title']) && isset($_POST['content']);
+      return isset($_POST['title']) && isset($_POST['content']) && isset($_POST['newDepo']);
     }
    
     public static function DepoSave()

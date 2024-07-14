@@ -9,22 +9,27 @@ class KecsoCouriorView
 {
     public static function ShowCourior()
     {
-       
-        $html ='';
-        $html = IndexView::OpenSection('Futárok');
-        $html.= '<form method="post" action="' . Config::KECSO_URL . '">';
-        $html.= IndexView::CreateInput('Azonosító', 'ids');
-        $html.= IndexView::CreateInput('Futár neve', 'name');
-        $html.= '<button type="submit" name="newCourior">Futár hozzáadása</button>';
-        $html.= '</form>';
+    $html = '';
+    $html .= IndexView::OpenSection('Futárok hozzáadása');
+    $html .= '<form method="post" action="' . Config::KECSO_URL . '">';
+    $html .= IndexView::CreateInput('Azonosító', 'ids');
+    $html .= IndexView::CreateInput('Futár neve', 'name');
+    $html .= '<button type="submit" name="newCourior">Futár hozzáadása</button>';
+    $html .= '</form>';
 
-        $html.= self::DisplayCouriors();
+    $html .= '<h3>Futárok listája</h3>';
+    $html .= self::DisplayCouriors();
 
-        $html.=IndexView::CloseSection();
-        return $html;
+    $html .= IndexView::CloseSection();
+    return $html;
     }
-    public static function CouriorData($couriordata, $editcourior = null, $id = null)
-{
+
+   public static function CouriorData($couriordata, $editcourior = null, $id = null)
+   {
+
+    usort($couriordata, function($a, $b) {
+        return $a['ids'] - $b['ids'];
+    });
     $html = '';
 
     // Csoportosítás az 'ids' kulcs alapján
@@ -144,23 +149,34 @@ private static function DisplayCouriors()
                 </thead>
                 <tbody>';
 
-    foreach ($couriors as $courior) {
-        $html .= '<tr>
-                    <td>' . $courior['ids'] . '</td>
-                    <td>' . $courior['name'] . '</td>
-                    <td>
-                        <form method="post" action="' . Config::KECSO_URL . '" style="display:inline;">
-                            <input type="hidden" name="deleteCouriorId" value="' . $courior['_id'] . '">
-                            <button type="submit" name="deleteCourior">Törlés</button>
-                     </td>
-                </tr>';
+    if (!empty($couriors)) {
+        foreach ($couriors as $courior) {
+            $html .= '<tr>
+                        <td>' . htmlspecialchars($courior['ids'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($courior['name'] ?? '') . '</td>
+                        <td>
+                            <form method="post" action="' . Config::KECSO_URL . '" style="display:inline;">
+                                <input type="hidden" name="deleteCouriorId" value="' . htmlspecialchars($courior['_id'] ?? '') . '">
+                                <button type="submit" name="deleteCourior">Törlés</button>
+                            </form>
+                         </td>
+                    </tr>';
+        }
+        $html .= '</tbody></table>';
+        // Ha van legalább egy futár, megjelenítjük a linkeket
+        if (count($couriors) > 0) {
+            $html .= '<a href="' . Config::KECSO_URL_COURIORDATA  .'">Személyes adatok</a>
+                      <a href="' . Config::KECSO_URL_COURIORADDRESS .'">Hónapos szétbontás</a>';
+        }
+    } else {
+        $html .= '<tr><td>Nincsenek elérhető futárok</td></tr>';
+        $html .= '</tbody></table>';
     }
-    $html .= '</tbody></table>';
-    $html .='</form>
-    <a href="' . Config::KECSO_URL_COURIORDATA . '?operation=couriordata&param=' . $courior['_id'] . '">Személyes adatok</a>
-    <a href="' . Config::KECSO_URL_COURIORADDRESS . '?operation=courioraddress&param=' . $courior['_id'] . '">Hónapos szétbontás</a>';
+
     return $html;
 }
+
+
     public static function CouriorsAddress($addresses, $editaddress = null)
     {
         $html = '';
@@ -328,7 +344,7 @@ private static function DisplayCouriors()
 
             foreach ($deliveries as $delivery) {
                 $html .= '<tr>
-                            <td>' . htmlspecialchars($delivery['_id'] ?? '') . '</td>
+                            <td>' . htmlspecialchars($delivery['ids'] ?? '') . '</td>
                             <td>' . htmlspecialchars($delivery['totalDeliveredAddresses'] ?? '') . '</td>
                           </tr>';
             }

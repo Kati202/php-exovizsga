@@ -16,82 +16,101 @@ class CouriorsModel
         if (self::$db === null) {
             $uri = 'mongodb://localhost:27017';
             $client = new Client($uri);
-            self::$db = $client->exovizsga;
+            self::$db = $client->selectDatabase('exovizsga');
         }
     //Főoldal
     }
     public static function InsertCouriors($courior)
-	{
-        self::Init(); 
+   {
+    self::Init();
+    $courior['ids'] = (int)$courior['ids']; // Biztosítjuk, hogy az 'ids' integerré változik
 
-        $collection = self::$db->kecsocouriors;
-        return $collection->insertOne($courior);
-	}
+    $collection = self::$db->selectCollection('kecsocouriors');
+    
+    // Ellenőrizzük, hogy van-e már ilyen ids vagy name az adatbázisban
+    $existingCourior = $collection->findOne([
+        '$or' => [
+            ['ids' => $courior['ids']],
+            ['name' => $courior['name']]
+        ]
+    ]);
+
+    if ($existingCourior === null) 
+    {
+        // Ha nincs még ilyen ids vagy name, akkor hozzáadjuk a futárt
+        $result = $collection->insertOne($courior);
+        return $result;
+    } 
+    }
+
     public static function GetCouriors()
     {
-        self::Init(); 
-        $collection = self::$db->kecsocouriors;
-        $cursor = $collection->find();
-        return $cursor->toArray();
-   }
-   public static function GetCouriorById($id)
-   {
-    self::Init(); 
+        self::Init();
     $collection = self::$db->kecsocouriors;
-    return $collection->findOne(['_id' => new ObjectId($id)]);
-   }
-   public static function GetCouriorByIds($ids)
+    $cursor = $collection->find([], ['sort' => ['ids' => 1]]);
+    return $cursor->toArray();
+    }
+
+    public static function GetCouriorById($id)
+    {
+        self::Init();
+        $collection = self::$db->selectCollection('kecsocouriors'); 
+        return $collection->findOne(['_id' => new ObjectId($id)]);
+    }
+
+    public static function DeleteCouriors($id)
+    {
+        self::Init();
+        $collection = self::$db->selectCollection('kecsocouriors'); 
+        $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
+        return $result->getDeletedCount();
+    }
+   /*public static function GetCouriorByIds($ids)
    {
     self::Init(); 
     $collection = self::$db->kecsocouriors;
     return $collection->findOne(['ids' => $ids]);
-   }
-   public static function DeleteCouriors($id)
-   {
-       $collection = self::$db->kecsocouriors;
-       $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
-
-       return $result->getDeletedCount();
-   }
+   }*/
+  
   //Futár személyes adatok 
   public static function InsertCouriordata($data)
-   {
-    self::Init(); 
-    $collection = self::$db->kecsocouriorsdata;
-    return $collection->insertOne($data);
-   }
-   public static function GetCouriorData()
-   {
-    self::Init(); 
-    $collection = self::$db->kecsocouriorsdata;
-    $cursor = $collection->find();
-    return $cursor->toArray();
-   }
-   public static function GetCouriorDataById($id)
-   {
-       self::Init(); 
-       $collection = self::$db->kecsocouriorsdata;
-       $filter = self::CreateFilterById($id);
-       return $collection->findOne($filter);
-   }
+  {
+   self::Init(); 
+   $collection = self::$db->kecsocouriorsdata;
+   return $collection->insertOne($data);
+  }
+  public static function GetCouriorData()
+  {
+   self::Init(); 
+   $collection = self::$db->kecsocouriorsdata;
+   $cursor = $collection->find();
+   return $cursor->toArray();
+  }
+  public static function GetCouriorDataById($id)
+  {
+      self::Init(); 
+      $collection = self::$db->kecsocouriorsdata;
+      $filter = self::CreateFilterById($id);
+      return $collection->findOne($filter);
+  }
 
-   public static function DeleteCouriordata($id)
-   {
-       self::Init(); 
-       $collection = self::$db->kecsocouriorsdata;
-       $filter = self::CreateFilterById($id);
-       $result = $collection->deleteOne($filter);
-       return $result->getDeletedCount();
-   }
+  public static function DeleteCouriordata($id)
+  {
+      self::Init(); 
+      $collection = self::$db->kecsocouriorsdata;
+      $filter = self::CreateFilterById($id);
+      $result = $collection->deleteOne($filter);
+      return $result->getDeletedCount();
+  }
 
-   public static function UpdateCouriordata($couriorId, $data)
-   {
-       self::Init(); 
-       $collection = self::$db->kecsocouriorsdata;
-       $filter = self::CreateFilterById($couriorId);
-       $result = $collection->updateOne($filter, ['$set' => $data]);
-       return $result->getModifiedCount();
-   }
+  public static function UpdateCouriordata($couriorId, $data)
+  {
+      self::Init(); 
+      $collection = self::$db->kecsocouriorsdata;
+      $filter = self::CreateFilterById($couriorId);
+      $result = $collection->updateOne($filter, ['$set' => $data]);
+      return $result->getModifiedCount();
+  }
 //Futár címei
    public static function InsertAddress($address)
     {

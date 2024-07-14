@@ -19,63 +19,115 @@ use App\Config;
 
 class Kecso
 {
-public function kecso(): string
-{
-        // Kezdeti nézet 
+    public static function kecso()
+    {
+        session_start();
+
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
+        
+        // Gépjárművek kezelése
+        $view .= CarsModel::Init();
 
-      
-        $view.=CarsModel::Init();
+        // Üzenetek megjelenítése
+        if (isset($_SESSION['success_message'])) {
+            $view .= '<p class="success-message">' . $_SESSION['success_message'] . '</p>';
+            unset($_SESSION['success_message']);
+        }
+        if (isset($_SESSION['error_message'])) {
+            $view .= '<p class="error-message">' . $_SESSION['error_message'] . '</p>';
+            unset($_SESSION['error_message']);
+        }
+        
         // Új gépjármű hozzáadása
         if (KecsoRequest::CarsInsert()) {
-            $car = [
-                'license' => $_POST['license']
-            ];
-            CarsModel::InsertCar($car);
-            header("Location: " . $_SERVER['REQUEST_URI']); 
-            exit();
+            $ids = $_POST['ids'] ?? '';
+            if (!empty($ids)) {
+                $car = ['ids' => $ids];
+                $result = CarsModel::InsertCar($car);
+                if ($result) {
+                    $_SESSION['success_message'] = 'Az autó sikeresen hozzá lett adva.';
+                } else {
+                    $_SESSION['error_message'] = 'Már létezik ilyen azonosítóval autó.';
+                }
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
+            } else {
+                $_SESSION['error_message'] = 'Gépjármű hozzáadásához az űrlap mező kitöltése kötelező!';
+            }
         }
-        //Gépjármű törlése
-        if (isset($_POST['deleteCar'])) {
-            $carId = $_POST['deleteCarId'];
-            CarsModel::DeleteCar($carId);
-            header("Location: " . $_SERVER['REQUEST_URI']); 
-            exit();
-        }
-        $view.=KecsoCarView::ShowCar();
-       
         
-        $view.=CouriorsModel::Init();
-        //Új futár hozzáadása
+        // Gépjármű törlése
+        if (isset($_POST['deleteCar'])) {
+            $carId = $_POST['deleteCarId'] ?? '';
+            if (!empty($carId)) {
+                CarsModel::DeleteCar($carId);
+                $_SESSION['success_message'] = 'Az autó sikeresen törölve lett.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
+            }
+        }
+        
+        // Gépjárművek megjelenítése
+        $view .= KecsoCarView::ShowCar();
+        
+        // Futárok kezelése
         if (KecsoRequest::CouriorInsert()) {
-            $courior = 
-            [
-                'ids' => $_POST['ids'],
-                'name' => $_POST['name']
-            ];
-            CouriorsModel::InsertCouriors($courior);
-            header("Location: " . $_SERVER['REQUEST_URI']); 
-            exit();
+            $ids = $_POST['ids'] ?? '';
+            $name = $_POST['name'] ?? '';
+        
+            // Azonosító validálása: csak számok lehetnek
+            if (empty($ids) || empty($name)) {
+                $_SESSION['error_message'] = 'Futár hozzáadáshoz minden mező kitöltése kötelező!';
+            } else if (ctype_digit($ids) && preg_match('/^[\p{L}\s]+$/u', $name)) {
+                // Az $name változóban csak betűk és szóközök lehetnek
+                $courior = ['ids' => (int)$ids, 'name' => $name];
+                $result = CouriorsModel::InsertCouriors($courior);
+                if ($result) {
+                    $_SESSION['success_message'] = 'A futár sikeresen hozzá lett adva.';
+                } else {
+                    $_SESSION['error_message'] = 'Már létezik ilyen azonosítóval vagy névvel futár.';
+                }
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
+            } else {
+                $_SESSION['error_message'] = 'Az azonosító mező csak számokat tartalmazhat, a név mező pedig csak betűket!';
+            }
         }
-        //Futár törlése
+        
+        // Futár törlése
         if (isset($_POST['deleteCourior'])) {
-            $couriorId = $_POST['deleteCouriorId'];
-            CouriorsModel::DeleteCouriors($couriorId);
-            header("Location: " . $_SERVER['REQUEST_URI']); 
-            exit();
+            $couriorId = $_POST['deleteCouriorId'] ?? '';
+            if (!empty($couriorId)) {
+                CouriorsModel::DeleteCouriors($couriorId);
+                $_SESSION['success_message'] = 'A futár sikeresen törölve lett.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
+            }
         }
-       
-
-        $view .=KecsoCouriorView::ShowCourior();
-        $view .=KecsoDepoView::ShowDepoButton();
-        $view .=KecsoDispView::ShowDispButton();
-
-        //Oldalzárás
+        
+        // Futárok megjelenítése növekvő sorrendben 
+        $couriors = CouriorsModel::GetCouriors();
+        usort($couriors, function($a, $b) {
+            return $a['ids'] - $b['ids'];
+        });
+        $view .= KecsoCouriorView::ShowCourior($couriors);
+    
+        // Gombok megjelenítése
+        $view .= KecsoDepoView::ShowDepoButton();
+        $view .= KecsoDispView::ShowDispButton();
+    
+        // Oldalzárás
         $view .= IndexView::End();
-
+    
         return $view;
-}
+    }
+    
+    
+    
+
+    
+    
 public function cardata($param): string
 {
 $carId = isset($param) ? $param : null;
@@ -104,18 +156,18 @@ public function carcost($param): string
     $view = IndexView::Begin();
     $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
 
-    /*if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
         $startDate = $_POST['startDate'] ?? date('Y-m-01');
         $endDate = $_POST['endDate'] ?? date('Y-m-t');
     } else {
         $startDate = date('Y-m-01');
         $endDate = date('Y-m-t');
-    }*/
+    }
 
-   /* $deliveries = CarsModel::SumDeliveredAddressesByDateAndGroup($startDate, $endDate);
-    var_dump($deliveries);*/
+    $cars = CarsModel::SumCostByDateAndGroup($startDate, $endDate);
+   
 
-    // Autóbeszúrás 
+    // Autó beszúrás 
     if (KecsoRequest::CarCostInsert()) {
         $carcost = [
             'ids' => $_POST['ids'],
@@ -127,18 +179,19 @@ public function carcost($param): string
         header("Location: " . Config::KECSO_URL_CARCOST);
         exit();
     }
-
+    //Autó törlése
     if (KecsoRequest::CarCostDelete()) {
         $carcostId = $_POST['deleteCarcostId'];
         CarsModel::DeleteCarCost($carcostId);
         header("Location: " . Config::KECSO_URL_CARCOST);
         exit();
     }
-
+    //Autó szerkesztése
+    $editcarcost = null;
     if (KecsoRequest::CarCostUpdate()) {
         $editcarcost = CarsModel::GetCarCostById($_POST['updateCarCostId']);
     }
-
+    //Szerkesztés mentése
     if (KecsoRequest::CarCostSave()) {
         $carcost = [
             'ids' => $_POST['ids'],
@@ -152,7 +205,7 @@ public function carcost($param): string
     }
 
     $carcost = CarsModel::GetCarCost();
-    //$view .= KecsoCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate);
+    $view .= KecsoCarView::ShowCostByGroup($cars, $startDate, $endDate);
     $view .= KecsoCarView::CarCost($carcost, $editcarcost = null);
     $view .= IndexView::End();
 
@@ -335,95 +388,135 @@ public function courioraddress($param): string
 
     return $view;
 }
-
-
-
-
-
-public static function depo($param):string
+public static function depo($param): string
 {
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Depó adatai');
-  
-    $editDepo=null;
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') 
-    {
-        // Depó szerkesztése
-        if (KecsoRequest::DepoUpdate()) 
-        {
-            $editDepoId = $_POST['updateDepoId'];
-            $editDepo = DeposModel::GetDepoById($editDepoId);
+    
+    $editDepo = null;
+    $errorMessages = []; // Hibaüzenetek tárolására
+    
+    // Session kezelés inicializálása
+    session_start();
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Depó szerkesztése előkészítése
+        if (KecsoRequest::DepoUpdate()) {
+            $editDepoId = $_POST['updateDepoId'] ?? null;
+            if (!empty($editDepoId)) {
+                $editDepo = DeposModel::GetDepoById($editDepoId);
+            }
         }
-       if (KecsoRequest::DepoSave()) 
-        {
-            $editDepoId = $_POST['editDepoId'];
+    
+        // Depó mentése
+        if (KecsoRequest::DepoSave()) {
+            $editDepoId = $_POST['editDepoId'] ?? null;
             $title = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
-            if (!empty($editDepoId) && !empty($title) && !empty($content)) 
-            {
+            if (empty($editDepoId) || empty($title) || empty($content)) {
+                $_SESSION['error_message'] = 'Minden mező kitöltése kötelező!';
+            } else {
                 DeposModel::UpdateDepodata($editDepoId, ['title' => $title, 'content' => $content]);
-                // Mentés után ne legyen szerkesztési állapotban
-                $editDepo = null;
-                header("Location: " . Config::KECSO_URL_DEPO);
+                $_SESSION['success_message'] = 'Az adat sikeresen frissítve lett.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
             }
         }
-        // Új depó adat hozzáadása
-        if (KecsoRequest::DepoInsert()) 
-        {
+    
+        // Új depó hozzáadása
+        if (KecsoRequest::DepoInsert()) {
             $title = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
-            if (!empty($title) && !empty($content)) 
-            {
+            if (empty($title) || empty($content)) {
+                $_SESSION['error_message'] = 'Minden mező kitöltése kötelező!';
+            } else {
                 DeposModel::InsertDepodata(['title' => $title, 'content' => $content]);
-        
+                $_SESSION['success_message'] = 'A depóadat sikeresen hozzá lett adva.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
             }
         }
-        // Depó adat törlése
-        if (KecsoRequest::DepoDelete()) 
-        {
-            $deleteDepoId = $_POST['deleteDepoId'];
-            DeposModel::DeleteDepodata($deleteDepoId);
+    
+        // Depó törlése
+        if (KecsoRequest::DepoDelete()) {
+            $deleteDepoId = $_POST['deleteDepoId'] ?? null;
+            if (!empty($deleteDepoId)) {
+                DeposModel::DeleteDepodata($deleteDepoId);
+                $_SESSION['success_message'] = 'Az adat sikeresen törölve lett.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
+            }
         }
     }
+    
+    // Megjelenítjük a hibaüzenetet, ha van
+    if (isset($_SESSION['error_message'])) {
+        $view .= '<div>';
+        $view .= '<p>' . htmlspecialchars($_SESSION['error_message']) . '</p>';
+        $view .= '</div>';
+        unset($_SESSION['error_message']);
+    }
+    
+    // Megjelenítjük a sikeres üzenetet, ha van
+    if (isset($_SESSION['success_message'])) {
+        $view .= '<div>';
+        $view .= '<p>' . htmlspecialchars($_SESSION['success_message']) . '</p>';
+        $view .= '</div>';
+        unset($_SESSION['success_message']);
+    }
+    
     $depodata = DeposModel::GetDepoData();
-    $view .= KecsoDepoView::Depo($depodata,$editDepo);
+    $view .= KecsoDepoView::Depo($depodata, $editDepo);
     $view .= IndexView::CloseSection();
     return $view;
-}  
-  public static function disp($param):string
+    
+}
+
+
+public static function disp($param): string
 {
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Diszpécserek elérhetőségei');
     $dispdata = DispModel::GetDispdata(); 
     $editdisp = null; 
 
+    // Hibaüzenetek tömbje
+    $errors = [];
+
+    // Űrlap beküldésének és validációinak kezelése
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Új diszpécser hozzáadása
         if (KecsoRequest::DispInsert()) {
             $name = $_POST['name'] ?? '';
             $title = $_POST['title'] ?? '';
             $phone = $_POST['phone'] ?? '';
-            if (!empty($name) && !empty($title) && !empty($phone)) {
-                DispModel::InsertDispdata(['name' => $name, 'title' => $title, 'phone' => $phone]);
-                header("Location: " . Config::KECSO_URL_DISP);
-                exit();
+
+            // Alap validáció: üres mezők ellenőrzése
+            if (empty($name) || empty($title) || empty($phone)) {
+                $errors[] = 'Minden mező kitöltése kötelező.';
+            } else {
+                // Specifikus validáció: név és munkaterület mező betű formátum ellenőrzése
+                if (!self::isValidNameFormat($name)) {
+                    $errors[] = 'A Név mező csak betűket és megengedett egyéb karaktereket tartalmazhat.';
+                }
+                if (!self::isValidTitleFormat($title)) {
+                    $errors[] = 'A Munkaterület mező csak betűket és megengedett egyéb karaktereket tartalmazhat.';
+                }
+
+                // Telefonszám validáció
+                if (!empty($phone) && !self::isValidPhoneFormat($phone)) {
+                    $errors[] = 'A Telefonszám formátuma nem megfelelő.';
+                }
+
+                if (empty($errors)) {
+                    DispModel::InsertDispdata(['name' => $name, 'title' => $title, 'phone' => $phone]);
+                    header("Location: " . Config::KECSO_URL_DISP);
+                    exit();
+                }
             }
-            
         }
 
-        if (KecsoRequest::DispSave()) {
-            $editDispId = $_POST['editDispId'];
-            $name = $_POST['name'] ?? '';
-            $title = $_POST['title'] ?? '';
-            $phone = $_POST['phone'] ?? '';
-            if (!empty($editDispId) && !empty($name) && !empty($title) && !empty($phone)) {
-                DispModel::UpdateDispdata($editDispId, ['name' => $name, 'title' => $title, 'phone' => $phone]);
-                header("Location: " . Config::KECSO_URL_DISP);
-                exit();
-            }
-        }
-
+        // Törlés
         if (KecsoRequest::DispDelete()) {
             $deleteDispId = $_POST['deleteDispId'];
             DispModel::DeleteDispdata($deleteDispId);
@@ -431,18 +524,48 @@ public static function depo($param):string
             exit();
         }
 
+        // Frissítés
         if (KecsoRequest::DispUpdate()) {
             $editDispId = $_POST['updateDispId'] ?? '';
             
             if (!empty($editDispId)) {
-                
                 $editdisp = DispModel::GetDispById($editDispId);
             }
         }
     }
 
-    $view .= KecsoDispView::Disp($dispdata,$editdisp);
+    // Ha van validációs hiba, megjelenítjük
+    if (!empty($errors)) {
+        foreach ($errors as $error) {
+            $view .= '<p style="color: red;">' . htmlspecialchars($error) . '</p>';
+        }
+    }
+
+    // Megjelenítjük a fő nézetet és az űrlapot
+    $view .= KecsoDispView::Disp($dispdata, $editdisp);
     $view .= IndexView::CloseSection();
     return $view;
-} 
+}
+
+private static function isValidPhoneFormat($phone)
+{
+    // Elfogadott karakterek: számok, szóköz, +, és a következő speciális karakterek: ()/-.
+    return preg_match('/^(06)(((20|30|70)[0-9]{7})|((?!(30|20|70))[0-9]{8,9}))$/', $phone) || preg_match('/^(\+?[\d\s-]+)$/', $phone);
+}
+
+private static function isValidNameFormat($name) 
+{
+    // Elfogadott karakterek: betűk, szóköz, és a következő speciális karakterek: .,-
+    return preg_match('/^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű\s.,-]+$/', $name);
+}
+
+private static function isValidTitleFormat($title) 
+{
+    // Elfogadott karakterek: betűk, szóköz, és a következő speciális karakterek: .,-
+    return preg_match('/^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű\s.,-]+$/', $title);
+}
+
+
+
+
 }

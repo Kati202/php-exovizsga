@@ -11,12 +11,13 @@ public static function ShowCar()
     {
         
         $html ='';
-        $html .= IndexView::OpenSection('Gépjárművek');
+        $html .= IndexView::OpenSection('Gépjárművek hozzáadása');
         $html .= '<form method="post" action="' . Config::KECSO_URL . '">';
-        $html .= IndexView::CreateInput('Rendszám', 'license');
+        $html .= IndexView::CreateInput('Rendszám', 'ids');
         $html .= '<button type="submit" name="newCar">Gépjármű hozzáadása</button>';
         $html .= '</form>';
 
+        $html .= '<h3>Gépjárművek listája</h3>';
         $html .= self::DisplayCars();
 
         $html .= IndexView::CloseSection();
@@ -111,34 +112,41 @@ public static function CarData($carId)
 
     return $html;
 }
-    private static function DisplayCars()
-    {
-        $cars = CarsModel::GetCars();
-        $html = '<table border="1" cellpadding="10" >
-                    <thead>
-                        <tr><th>Rendszám</th>
-                            <th>Adatok</th>
-                            <th>Költségek</th>
-                            <th>Műveletek</th></tr>
-                    </thead>
-                    <tbody>';
+private static function DisplayCars()
+{
+    $cars = CarsModel::GetCars();
+    $html = '<table border="1" cellpadding="10" >
+                <thead>
+                    <tr><th>Rendszám</th>
+                    <th>Műveletek</th></tr>
+                </thead>
+                <tbody>';
+    if (!empty($cars)) {
         foreach ($cars as $car) 
         {
             $html .= '<tr>
-                        <td>' . $car['license'] . '</td>
-                        <td><a href="'.Config::KECSO_URL_CARDATA.'?operation=cardata&param=' . $car['_id'] .'">Gépjármű adatai</a></td>
-                        <td><a href="'.Config::KECSO_URL_CARCOST.'?operation=carcost&param=' . $car['_id'] .'">Javítási költségek</a></td>
+                        <td>' . htmlspecialchars($car['ids'] ?? '') . '</td>
                         <td>
                             <form method="post" action="' . Config::KECSO_URL . '" style="display:inline;">
-                                <input type="hidden" name="deleteCarId" value="' . $car['_id'] . '">
+                                <input type="hidden" name="deleteCarId" value="' . htmlspecialchars($car['_id'] ?? '') . '">
                                 <button type="submit" name="deleteCar">Törlés</button>
                             </form>
                         </td>
                       </tr>';
         }
         $html .= '</tbody></table>';
-        return $html;
+        if (isset($car)) {
+            $html .= '<a href="'.Config::KECSO_URL_CARDATA.'">Gépjárművek adatai</a>';
+            $html .= '<a href="'.Config::KECSO_URL_CARCOST.'">Javítási költségek</a>';
+        }
+    } else {
+        $html .= '<tr><td colspan="2">Nincsenek elérhető autók</td></tr>';
+        $html .= '</tbody></table>';
     }
+
+    return $html;
+}
+
    
     public static function CarCost($carcost, $editcarcost = null)
     {
@@ -191,7 +199,7 @@ public static function CarData($carId)
                             <th>Rendszám</th>
                             <th>Időpont</th>
                             <th>Alkatrész</th>
-                            <th>Költségek</th>
+                            <th>Költségek/Ft-ben</th>
                             <th>Műveletek</th>
                         </tr>
                     </thead>
@@ -235,7 +243,7 @@ public static function CarData($carId)
         $html .= '<label for="date">Időpont:</label>';
         $html .= '<input type="datetime-local" id="date" name="date">';
         $html .= IndexView::CreateInput('Alkatrész', 'part');
-        $html .= IndexView::CreateInput('Ára', 'cost');
+        $html .= IndexView::CreateInput('Ára/Ft-ben', 'cost');
         $html .= '<button type="submit" name="newCost">Új költség hozzáadása</button>';
         $html .= '</form>';
     
@@ -245,7 +253,7 @@ public static function CarData($carId)
     private static function CarCostEdit($editcarcost)
     {
         $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '">';
-        $html .= '<input type="hidden" name="editCarcostId" value="' . $editcarcost['_id'] . '">';
+        $html .= '<input type="hidden" name="editCarCostId" value="' . $editcarcost['_id'] . '">';
         $html .= IndexView::CreateInputValue('Rendszám', 'ids', $editcarcost['ids']);
         $html .= '<label for="date">Időpont:</label>';
         $html .= '<input type="datetime-local" id="date" name="date" value="' . date('Y-m-d\TH:i', strtotime($editcarcost['date'])) . '">';
@@ -256,24 +264,24 @@ public static function CarData($carId)
     
         return $html;
     }
-  /*public static function ShowDeliveriesByGroup($deliveries, $startDate, $endDate)
+  public static function ShowCostByGroup($cars, $startDate, $endDate)
     {
-        $html = '<h2>Kézbesítések összesítése az időszakra (' . $startDate . ' - ' . $endDate . ')</h2>';
+        $html = '<h2>Rendszám szerint alkatrész árak összesítése (' . $startDate . ' - ' . $endDate . ')</h2>';
 
         if (!empty($deliveries)) {
             $html .= '<table border="1" cellpadding="10">
                         <thead>
                             <tr>
-                                <th>Azonosító</th>
-                                <th>Összesen kézbesített címek száma</th>
+                                <th>Rendszám</th>
+                                <th>Költségek</th>
                             </tr>
                         </thead>
                         <tbody>';
 
-            foreach ($deliveries as $delivery) {
+            foreach ($cars as $car) {
                 $html .= '<tr>
-                            <td>' . htmlspecialchars($delivery['_id'] ?? '') . '</td>
-                            <td>' . htmlspecialchars($delivery['totalDeliveredAddresses'] ?? '') . '</td>
+                            <td>' . htmlspecialchars($car['ids'] ?? '') . '</td>
+                            <td>' . htmlspecialchars($car['cost'] ?? '') . '</td>
                           </tr>';
             }
 
@@ -292,7 +300,7 @@ public static function CarData($carId)
                   </form>';
 
         return $html;
-    }*/
+    }
 
 }
   
