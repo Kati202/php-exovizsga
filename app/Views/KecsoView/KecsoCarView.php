@@ -115,15 +115,17 @@ public static function CarData($carId)
 private static function DisplayCars()
 {
     $cars = CarsModel::GetCars();
-    $html = '<table border="1" cellpadding="10" >
+    $html = '<table border="1" cellpadding="10">
                 <thead>
-                    <tr><th>Rendszám</th>
-                    <th>Műveletek</th></tr>
+                    <tr>
+                        <th>Rendszám</th>
+                        <th>Műveletek</th>
+                    </tr>
                 </thead>
                 <tbody>';
+
     if (!empty($cars)) {
-        foreach ($cars as $car) 
-        {
+        foreach ($cars as $car) {
             $html .= '<tr>
                         <td>' . htmlspecialchars($car['ids'] ?? '') . '</td>
                         <td>
@@ -135,10 +137,12 @@ private static function DisplayCars()
                       </tr>';
         }
         $html .= '</tbody></table>';
-        if (isset($car)) {
-            $html .= '<a href="'.Config::KECSO_URL_CARDATA.'">Gépjárművek adatai</a>';
-            $html .= '<a href="'.Config::KECSO_URL_CARCOST.'">Javítási költségek</a>';
-        }
+
+        
+        $html .= '<div>';
+        $html .= '<a href="'.Config::KECSO_URL_CARDATA.'">Gépjárművek adatai</a>';
+        $html .= '<a href="'.Config::KECSO_URL_CARCOST.'">Javítási költségek</a>';
+        $html .= '</div>';
     } else {
         $html .= '<tr><td colspan="2">Nincsenek elérhető autók</td></tr>';
         $html .= '</tbody></table>';
@@ -146,6 +150,7 @@ private static function DisplayCars()
 
     return $html;
 }
+
 
    
     public static function CarCost($carcost, $editcarcost = null)
@@ -167,9 +172,9 @@ private static function DisplayCars()
         $groupedData = [];
 
         foreach ($carcost as $car) {
-            // Csoportosítás logikája
+           
             $ids = $car['ids'];
-            // További adatok csoportosítása
+            
             if (!isset($groupedData[$ids])) {
                 $groupedData[$ids] = [];
             }
@@ -178,7 +183,7 @@ private static function DisplayCars()
                 'date' => $car['date'],
                 'part' => $car['part'],
                 'cost' => $car['cost'],
-               '_id' => (string) $car['_id'], // MongoDB ObjectId stringgé alakítása
+               '_id' => (string) $car['_id'], 
             ];
         }
 
@@ -208,11 +213,11 @@ private static function DisplayCars()
         foreach ($items as $item) {
             $html .= '<tr>
                         <td>' . htmlspecialchars($item['ids'] ?? '') . '</td>
-                        <td>' . htmlspecialchars($item['date'] ?? '') . '</td>
+                        <td>' . htmlspecialchars(date('Y-m-d H:i', strtotime($item['date']->toDateTime()->format('Y-m-d H:i')))) . '</td>
                         <td>' . htmlspecialchars($item['part'] ?? '') . '</td>
                         <td>' . htmlspecialchars($item['cost'] ?? '') . '</td>
                         <td>
-                            <form method="post" action="' . Config::KECSO_URL_CARCOST . '?operation=couriorcarcost&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
+                            <form method="post" action="' . Config::KECSO_URL_CARCOST . '?operation=carcost&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
                              <input type="hidden" name="updateCarCostId" value="' . ($item['_id'] ?? '') . '">
                              <button type="submit" name="updateCarcost">Szerkesztés</button>
                             </form>
@@ -244,7 +249,7 @@ private static function DisplayCars()
         $html .= '<input type="datetime-local" id="date" name="date">';
         $html .= IndexView::CreateInput('Alkatrész', 'part');
         $html .= IndexView::CreateInput('Ára/Ft-ben', 'cost');
-        $html .= '<button type="submit" name="newCost">Új költség hozzáadása</button>';
+        $html .= '<button type="submit" name="newCarCost">Új költség hozzáadása</button>';
         $html .= '</form>';
     
         return $html;

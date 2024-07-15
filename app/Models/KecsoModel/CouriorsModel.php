@@ -6,6 +6,7 @@ use MongoDB\Client;
 use App\Config;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
+use Exception;
 
 class CouriorsModel
 {
@@ -23,7 +24,7 @@ class CouriorsModel
     public static function InsertCouriors($courior)
    {
     self::Init();
-    $courior['ids'] = (int)$courior['ids']; // Biztosítjuk, hogy az 'ids' integerré változik
+    $courior['ids'] = (int)$courior['ids']; 
 
     $collection = self::$db->selectCollection('kecsocouriors');
     
@@ -45,7 +46,7 @@ class CouriorsModel
 
     public static function GetCouriors()
     {
-        self::Init();
+    self::Init();
     $collection = self::$db->kecsocouriors;
     $cursor = $collection->find([], ['sort' => ['ids' => 1]]);
     return $cursor->toArray();
@@ -75,10 +76,32 @@ class CouriorsModel
   //Futár személyes adatok 
   public static function InsertCouriordata($data)
   {
-   self::Init(); 
-   $collection = self::$db->kecsocouriorsdata;
-   return $collection->insertOne($data);
+    self::Init();
+
+    $collection = self::$db->kecsocouriorsdata;
+
+    // Ellenőrizzük, hogy az ids mező egyedi legyen
+    $existingCourior = $collection->findOne([
+        'ids' => (int)$data['ids']
+    ]);
+
+    if ($existingCourior) {
+        throw new Exception('Már létezik ilyen azonosítóval futár.');
+    }
+    $existingCouriorByName = $collection->findOne([
+        'name' => $data['name']
+    ]);
+
+    if ($existingCouriorByName) {
+        throw new \Exception('Már létezik ilyen névvel futár.');
+    }
+
+    // Beszúrás az adatbázisba
+    $result = $collection->insertOne($data);
+
+    return $result;
   }
+  
   public static function GetCouriorData()
   {
    self::Init(); 
@@ -112,32 +135,35 @@ class CouriorsModel
       return $result->getModifiedCount();
   }
 //Futár címei
-   public static function InsertAddress($address)
-    {
-        self::Init();
-        $collection = self::$db->kecsoaddresses;
+public static function InsertAddress($address)
+{
+    self::Init();
+    $collection = self::$db->kecsoaddresses;
 
-        // Konvertáljuk az időt UTCDateTime objektummá
-        $time = new UTCDateTime(strtotime($address['time']) * 1000);
-
-        // A name, ids, day, month stb. mezőket közvetlenül használjuk
-        $insertData = [
-            'name' => $address['name'],
-            'ids' => (int)$address['ids'],
-            'day' => (int)$address['day'],
-            'month' => $address['month'],
-            'time' => $time, // Idő UTCDateTime formátumban
-            'total_addresses' => (int)$address['total_addresses'],
-            'delivered_addresses' => (int)$address['delivered_addresses'],
-            'final_return' => (int)$address['final_return'],
-            'live_return' =>(int) $address['live_return']
-        ];
-
-        // Beszúrjuk az adatokat az adatbázisba
-        $result = $collection->insertOne($insertData);
-
-        return $result;
+    
+    if (!is_numeric($address['ids'])) {
+        throw new Exception('Az "ids" mező csak szám lehet.');
     }
+
+    // További mezők ellenőrzése és adatok beszúrása
+    $time = new UTCDateTime(strtotime($address['time']) * 1000);
+    $insertData = [
+        'name' => $address['name'],
+        'ids' => (int)$address['ids'],
+        'day' => (int)$address['day'],
+        'month' => $address['month'],
+        'time' => $time,
+        'total_addresses' => (int)$address['total_addresses'],
+        'delivered_addresses' => (int)$address['delivered_addresses'],
+        'final_return' => (int)$address['final_return'],
+        'live_return' => (int)$address['live_return']
+    ];
+
+    $result = $collection->insertOne($insertData);
+    return $result;
+
+}
+
    public static function GetAddresses()
     {
         self::Init(); 
@@ -158,30 +184,34 @@ class CouriorsModel
         self::Init();
         $collection = self::$db->kecsoaddresses;
 
-        // Konvertáljuk az időt UTCDateTime objektummá
-        $time = new UTCDateTime(strtotime($address['time']) * 1000);
+        // Ellenőrzés: ids mező típusa
+        if (!is_numeric($address['ids'])) {
+            throw new Exception('Az "ids" mező csak szám lehet.');
+        }
 
-        // A name, ids, day, month stb. mezőket közvetlenül használjuk
+        // További mezők ellenőrzése és adatok frissítése
+        $time = new UTCDateTime(strtotime($address['time']) * 1000);
         $updateData = [
             'name' => $address['name'],
             'ids' => (int)$address['ids'],
             'day' => (int)$address['day'],
             'month' => $address['month'],
-            'time' => $time, // Idő UTCDateTime formátumban
+            'time' => $time,
             'total_addresses' => (int)$address['total_addresses'],
             'delivered_addresses' => (int)$address['delivered_addresses'],
             'final_return' => (int)$address['final_return'],
             'live_return' => (int)$address['live_return']
         ];
 
-        // Az $addressId alapján frissítjük az adatokat az adatbázisban
         $result = $collection->updateOne(
             ['_id' => new \MongoDB\BSON\ObjectID($addressId)],
             ['$set' => $updateData]
         );
 
         return $result;
+
     }
+    
 
     public static function DeleteAddress($id)
     {
@@ -209,14 +239,23 @@ class CouriorsModel
                 '$group' => [
                     '_id' => ['$toInt' => '$ids'],
                     'totalDeliveredAddresses' => ['$sum' => ['$toInt' => '$delivered_addresses']],
-                    'totalTotalAddresses' => ['$sum' => ['$toInt' => '$total_addresses']]
-                ]
+                    ]
             ]
         ];
 
         $result = $collection->aggregate($pipeline)->toArray();
-        var_dump($result);
+        
     }
+    private static function CreateFilterById($id)
+   {
+    if(!($id instanceof \MongoDB\BSON\ObjectId))
+    {
+        $id = new \MongoDB\BSON\ObjectId($id);
+    }
+    $filter = ['_id' => $id];
+    return $filter;
+   }
+}
     /*public static function TestMatch($startDate, $endDate)
 {
     self::Init();
@@ -237,16 +276,7 @@ class CouriorsModel
 
     return $result;
 }*/
-private static function CreateFilterById($id)
-   {
-    if(!($id instanceof \MongoDB\BSON\ObjectId))
-    {
-        $id = new \MongoDB\BSON\ObjectId($id);
-    }
-    $filter = ['_id' => $id];
-    return $filter;
-   }
-}
+
 /*<?php
 namespace App\Models\KecsoModel;
 

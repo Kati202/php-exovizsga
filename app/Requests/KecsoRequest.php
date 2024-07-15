@@ -16,7 +16,7 @@ class KecsoRequest
     public static function CarCostInsert()
     {
         return isset($_POST['ids']) && isset($_POST['date']) && isset($_POST['part']) &&
-               isset($_POST['cost']);
+               isset($_POST['cost']) && isset($_POST['newCarCost']);
     }
     public static function CarCostDelete()
     {

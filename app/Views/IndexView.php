@@ -48,7 +48,7 @@ class IndexView
     if ($name === 'total_addresses' || $name === 'delivered_addresses' || $name === 'final_return' || $name === 'live_return') {
         return '<div>
                     <label for="' . $name . '">' . $text . '</label>
-                    <input type="number" name="' . $name . '" id="' . $name . '" placeholder="' . htmlspecialchars($placeholder) . '">
+                    <input type="text" name="' . $name . '" id="' . $name . '" placeholder="' . htmlspecialchars($placeholder) . '">
                 </div>';
     } else {
         return '<div>

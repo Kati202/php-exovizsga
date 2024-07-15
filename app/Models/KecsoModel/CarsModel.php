@@ -93,10 +93,10 @@ public static function InsertCarCost($carcost)
     self::Init();
     $collection = self::$db->kecsocarcost;
 
-    // Konvertáljuk az időt UTCDateTime objektummá
+    
     $date = new UTCDateTime(strtotime($carcost['date']) * 1000);
 
-    // A name, ids, day, month stb. mezőket közvetlenül használjuk
+   
     $insertData =
      [
         'ids' => $carcost['ids'],
@@ -105,7 +105,7 @@ public static function InsertCarCost($carcost)
         'cost' => $carcost['cost'],
     ];
 
-    // Beszúrjuk az adatokat az adatbázisba
+    
     $result = $collection->insertOne($insertData);
 
     return $result;
@@ -130,10 +130,10 @@ public static function UpdateCarCost($carcostId, $carcost)
     self::Init();
     $collection = self::$db->kecsocarcost;
 
-    // Konvertáljuk az időt UTCDateTime objektummá
-    $date = new UTCDateTime(strtotime($address['date']) * 1000);
+    
+    $date = new UTCDateTime(strtotime($carcost['date']) * 1000);
 
-    // A name, ids, day, month stb. mezőket közvetlenül használjuk
+  
     $updateData = 
     [
         'ids' => $carcost['ids'],

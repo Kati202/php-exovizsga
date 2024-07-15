@@ -11,6 +11,7 @@
     <title>Exo-vizsga</title>
 </head>
 <body>
+  <?php //session_start(); ?>
   <header>
     <nav>
     <a href="<?php echo \App\Config::KECSO_URL; ?>">Kecskeméti depó</a>
