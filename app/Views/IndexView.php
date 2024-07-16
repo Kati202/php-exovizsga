@@ -18,9 +18,9 @@ class IndexView
     {
         return self::loadView('template/end');
     }
-    public static function Depos()
+    public static function File()
     {
-        return self::loadView('template/depo');
+        return self::loadView('template/file');
     }
 
     public static function StartTitle($title) 

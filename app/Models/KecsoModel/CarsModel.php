@@ -10,6 +10,8 @@ use MongoDB\BSON\UTCDateTime;
 class CarsModel
 {
     private static $db;
+    private static $client;
+    private static $collectionName = 'kecsocar_images';
 
     public static function Init()
     {
@@ -60,33 +62,67 @@ class CarsModel
     public static function InsertCarImage($carId, $imageData)
     {
         self::Init();
-        $collection = self::$db->kecsocar_images;
-    
-        // Az adatok beszúrása az adatbázisba ObjectId használatával
-        $result = $collection->updateOne(
-            ['_id' => new \MongoDB\BSON\ObjectId($carId)],
-            ['$push' => ['images' => $imageData]]
-        );
-    
-        return $result->getModifiedCount();;
+        $collection = self::$db->selectCollection(self::$collectionName);
+
+        try {
+            // Az adatok beszúrása az adatbázisba ObjectId használatával
+            $result = $collection->updateOne(
+                ['_id' => new ObjectId($carId)],
+                ['$push' => ['images' => $imageData]]
+            );
+
+            if ($result->getModifiedCount() > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (\Throwable $th) {
+            // Hibakezelés, ha valami nem sikerülne
+            
+            return false;
+        }
     }
-    
+
     public static function GetCarImages($carId)
-{
-    self::Init();
-    $collection = self::$db->kecsocar_images;
+    {
+        self::init();
+        $collection = self::$db->selectCollection(self::$collectionName);
 
-    // Validate the carId
-   
+        try {
+            $car = $collection->findOne(['_id' => new ObjectId($carId)]);
+            return isset($car['images']) ? $car['images'] : [];
+        } catch (\Throwable $th) {
+            // Hibakezelés, ha valami nem sikerülne
+            
+            return [];
+        }
+    }
 
-    //$car = $collection->findOne(['_id' => new ObjectId($carId)]);
-    //return isset($car['images']) ? $car['images'] : [];
-}
+    public static function DeleteCarImage($carId, $imageId)
+    {
+        self::Init();
+        $collection = self::$db->selectCollection(self::$collectionName);
 
-private static function isValidObjectId($id)
-{
-    return preg_match('/^[a-f\d]{24}$/i', $id);
-}
+        try {
+            $result = $collection->updateOne(
+                ['_id' => new ObjectId($carId)],
+                ['$pull' => ['images' => ['_id' => $imageId]]]
+            );
+
+            if ($result->getModifiedCount() > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (\Throwable $th) {
+            // Hibakezelés, ha valami nem sikerülne
+            echo 'Hiba történt: ' . $th->getMessage();
+            return false;
+        }
+    }
+
+
+
 //CarCost   
 public static function InsertCarCost($carcost)
 {
@@ -118,11 +154,18 @@ public static function GetCarCost()
     return $cursor->toArray();
 }
 
-public static function GetCarCostById($id)
+public static function GetCarCostById($carcostId)
 {
-    self::Init(); 
+    self::Init();
     $collection = self::$db->kecsocarcost;
-    return $collection->findOne(['_id' => new ObjectId($id)]);
+    $carcost = $collection->findOne(['_id' => new \MongoDB\BSON\ObjectID($carcostId)]);
+
+    // Ellenőrizd a dátum típusát és formázását
+    if ($carcost && isset($carcost['date']) && $carcost['date'] instanceof \MongoDB\BSON\UTCDateTime) {
+        $carcost['date'] = $carcost['date']->toDateTime()->format('Y-m-d H:i:s');
+    }
+
+    return $carcost;
 }
 
 public static function UpdateCarCost($carcostId, $carcost)

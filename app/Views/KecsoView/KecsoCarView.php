@@ -7,6 +7,7 @@ use App\Config;
 
 class KecsoCarView
 {
+//Fő oldal   
 public static function ShowCar()
     {
         
@@ -24,6 +25,45 @@ public static function ShowCar()
         return $html;
 
     }
+private static function DisplayCars()
+ {
+    $cars = CarsModel::GetCars();
+    $html = '<table border="1" cellpadding="10">
+                <thead>
+                    <tr>
+                        <th>Rendszám</th>
+                        <th>Műveletek</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+    if (!empty($cars)) {
+        foreach ($cars as $car) {
+            $html .= '<tr>
+                        <td>' . htmlspecialchars($car['ids'] ?? '') . '</td>
+                        <td>
+                            <form method="post" action="' . Config::KECSO_URL . '" style="display:inline;">
+                                <input type="hidden" name="deleteCarId" value="' . htmlspecialchars($car['_id'] ?? '') . '">
+                                <button type="submit" name="deleteCar">Törlés</button>
+                            </form>
+                        </td>
+                      </tr>';
+        }
+        $html .= '</tbody></table>';
+
+        
+        $html .= '<div>';
+        $html .= '<a href="'.Config::KECSO_URL_CARDATA.'">Gépjárművek adatai</a>';
+        $html .= '<a href="'.Config::KECSO_URL_CARCOST.'">Javítási költségek</a>';
+        $html .= '</div>';
+    } else {
+        $html .= '<tr><td colspan="2">Nincsenek elérhető autók</td></tr>';
+        $html .= '</tbody></table>';
+    }
+
+    return $html;
+}
+//Cardata aloldal
 public static function CarData($carId)
     {
         $html = '<form method="post" action="'. Config::KECSO_URL_CARDATA .'" enctype="multipart/form-data">';
@@ -48,6 +88,8 @@ public static function CarData($carId)
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
         $carId = $_POST['carId'];
         $file = $_FILES['file'];
+
+        
 
         if ($file['error'] === UPLOAD_ERR_OK) {
             $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
@@ -88,10 +130,10 @@ public static function CarData($carId)
     return $html;
    }
   
-    private static function ListUploadedImages($carId)
+   private static function ListUploadedImages($carId)
 {
     $uploadDir = 'uploads/kecso/';
-    $carImages = CarsModel::GetCarImages($carId); 
+    $carImages = CarsModel::GetCarImages($carId);
 
     $html = '<h2>Feltöltött képek:</h2>';
 
@@ -112,48 +154,9 @@ public static function CarData($carId)
 
     return $html;
 }
-private static function DisplayCars()
-{
-    $cars = CarsModel::GetCars();
-    $html = '<table border="1" cellpadding="10">
-                <thead>
-                    <tr>
-                        <th>Rendszám</th>
-                        <th>Műveletek</th>
-                    </tr>
-                </thead>
-                <tbody>';
 
-    if (!empty($cars)) {
-        foreach ($cars as $car) {
-            $html .= '<tr>
-                        <td>' . htmlspecialchars($car['ids'] ?? '') . '</td>
-                        <td>
-                            <form method="post" action="' . Config::KECSO_URL . '" style="display:inline;">
-                                <input type="hidden" name="deleteCarId" value="' . htmlspecialchars($car['_id'] ?? '') . '">
-                                <button type="submit" name="deleteCar">Törlés</button>
-                            </form>
-                        </td>
-                      </tr>';
-        }
-        $html .= '</tbody></table>';
-
-        
-        $html .= '<div>';
-        $html .= '<a href="'.Config::KECSO_URL_CARDATA.'">Gépjárművek adatai</a>';
-        $html .= '<a href="'.Config::KECSO_URL_CARCOST.'">Javítási költségek</a>';
-        $html .= '</div>';
-    } else {
-        $html .= '<tr><td colspan="2">Nincsenek elérhető autók</td></tr>';
-        $html .= '</tbody></table>';
-    }
-
-    return $html;
-}
-
-
-   
-    public static function CarCost($carcost, $editcarcost = null)
+//Carcost aloldal 
+  public static function CarCost($carcost, $editcarcost = null)
     {
         $html = '';
         $groupedData = self::GroupDataCarCost($carcost);
@@ -256,19 +259,20 @@ private static function DisplayCars()
     }
 
     private static function CarCostEdit($editcarcost)
-    {
-        $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '">';
-        $html .= '<input type="hidden" name="editCarCostId" value="' . $editcarcost['_id'] . '">';
-        $html .= IndexView::CreateInputValue('Rendszám', 'ids', $editcarcost['ids']);
-        $html .= '<label for="date">Időpont:</label>';
-        $html .= '<input type="datetime-local" id="date" name="date" value="' . date('Y-m-d\TH:i', strtotime($editcarcost['date'])) . '">';
-        $html .= IndexView::CreateInputValue('Alkatrész', 'part', $editcarcost['part']);
-        $html .= IndexView::CreateInputValue('Ára', 'cost', $editcarcost['cost']);
-        $html .= '<button type="submit" name="saveCarCost">Mentés</button>';
-        $html .= '</form>';
-    
-        return $html;
+   {
+    $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '">';
+    $html .= '<input type="hidden" name="editCarCostId" value="' . $editcarcost['_id'] . '">';
+    $html .= IndexView::CreateInputValue('Rendszám', 'ids', $editcarcost['ids']);
+    $html .= '<label for="date">Időpont:</label>';
+    $html .= '<input type="datetime-local" id="date" name="date" value="' . date('Y-m-d\TH:i', strtotime($editcarcost['date'])) . '">';
+    $html .= IndexView::CreateInputValue('Alkatrész', 'part', $editcarcost['part']);
+    $html .= IndexView::CreateInputValue('Ára', 'cost', $editcarcost['cost']);
+    $html .= '<button type="submit" name="saveCarCost">Mentés</button>';
+    $html .= '</form>';
+
+    return $html;
     }
+
   public static function ShowCostByGroup($cars, $startDate, $endDate)
     {
         $html = '<h2>Rendszám szerint alkatrész árak összesítése (' . $startDate . ' - ' . $endDate . ')</h2>';

@@ -140,13 +140,19 @@ public static function InsertAddress($address)
     self::Init();
     $collection = self::$db->kecsoaddresses;
 
-    
+    // Ellenőrizzük, hogy az "ids" mező szám
     if (!is_numeric($address['ids'])) {
         throw new Exception('Az "ids" mező csak szám lehet.');
     }
 
-    // További mezők ellenőrzése és adatok beszúrása
+    // Idő formázása UTCDateTime objektummá
     $time = new UTCDateTime(strtotime($address['time']) * 1000);
+
+    
+    $final_return = isset($address['final_return']) ? (int)$address['final_return'] : 0;
+    $live_return = isset($address['live_return']) ? (int)$address['live_return'] : 0;
+
+    // Beszúrási adatok összeállítása
     $insertData = [
         'name' => $address['name'],
         'ids' => (int)$address['ids'],
@@ -155,14 +161,15 @@ public static function InsertAddress($address)
         'time' => $time,
         'total_addresses' => (int)$address['total_addresses'],
         'delivered_addresses' => (int)$address['delivered_addresses'],
-        'final_return' => (int)$address['final_return'],
-        'live_return' => (int)$address['live_return']
+        'final_return' => $final_return,
+        'live_return' => $live_return
     ];
 
+    // Adatok beszúrása az adatbázisba
     $result = $collection->insertOne($insertData);
     return $result;
+  }
 
-}
 
    public static function GetAddresses()
     {
@@ -176,7 +183,15 @@ public static function InsertAddress($address)
     {
         self::Init(); 
         $collection = self::$db->kecsoaddresses;
-        return $collection->findOne(['_id' => new ObjectId($id)]);
+        $address = $collection->findOne(['_id' => new ObjectId($id)]);
+    
+        // Dátum formázás, ha szükséges
+        // Például: $address['date'] helyett a tényleges dátum mező nevét kell itt használni
+        if ($address && isset($address['time']) && $address['time'] instanceof \MongoDB\BSON\UTCDateTime) {
+            $address['time'] = $address['time']->toDateTime()->format('Y-m-d H:i:s');
+        }
+    
+        return $address;
     }
 
     public static function UpdateAddress($addressId, $address)
@@ -188,6 +203,8 @@ public static function InsertAddress($address)
         if (!is_numeric($address['ids'])) {
             throw new Exception('Az "ids" mező csak szám lehet.');
         }
+        $final_return = isset($address['final_return']) ? (int)$address['final_return'] : 0;
+        $live_return = isset($address['live_return']) ? (int)$address['live_return'] : 0;
 
         // További mezők ellenőrzése és adatok frissítése
         $time = new UTCDateTime(strtotime($address['time']) * 1000);
@@ -199,8 +216,8 @@ public static function InsertAddress($address)
             'time' => $time,
             'total_addresses' => (int)$address['total_addresses'],
             'delivered_addresses' => (int)$address['delivered_addresses'],
-            'final_return' => (int)$address['final_return'],
-            'live_return' => (int)$address['live_return']
+            'final_return' => $final_return,
+            'live_return' => $live_return
         ];
 
         $result = $collection->updateOne(
@@ -220,7 +237,7 @@ public static function InsertAddress($address)
         $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
         return $result->getDeletedCount();
     }
-    public static function SumDeliveredAddressesByDateAndGroup($startDate, $endDate)
+public static function SumDeliveredAddressesByDateAndGroup($startDate, $endDate)
     {
         self::Init();
 
@@ -237,13 +254,14 @@ public static function InsertAddress($address)
             ],
             [
                 '$group' => [
-                    '_id' => ['$toInt' => '$ids'],
-                    'totalDeliveredAddresses' => ['$sum' => ['$toInt' => '$delivered_addresses']],
+                '_id' => '$ids', 
+                'totalDeliveredAddresses' => ['$sum' => '$delivered_addresses']
                     ]
             ]
         ];
 
         $result = $collection->aggregate($pipeline)->toArray();
+        var_dump($result);
         
     }
     private static function CreateFilterById($id)
@@ -256,167 +274,4 @@ public static function InsertAddress($address)
     return $filter;
    }
 }
-    /*public static function TestMatch($startDate, $endDate)
-{
-    self::Init();
-
-    $collection = self::$db->kecsoaddresses;
-
-    $filter = [
-        'date' => [
-            '$gte' => new UTCDateTime(strtotime($startDate) * 1000),
-            '$lte' => new UTCDateTime(strtotime($endDate . ' 23:59:59') * 1000)
-        ]
-    ];
-
-    $options = [];
-
-    $result = $collection->find($filter, $options)->toArray();
-    var_dump($result); // Ellenőrizzük a találatokat
-
-    return $result;
-}*/
-
-/*<?php
-namespace App\Models\KecsoModel;
-
-use App\Requests\Request;
-use MongoDB\Client;
-use App\Config;
-use MongoDB\BSON\ObjectId;
-
-class CouriorsModel
-{
-    private static $db;
-
-    public static function Init()
-    {
-        if (self::$db === null) {
-            $uri = 'mongodb://localhost:27017';
-            $client = new Client($uri);
-            self::$db = $client->exovizsga;
-            self::$db->createCollection('kecsocouriors'); 
-            self::$db->createCollection('kecsocouriorsdata'); 
-            self::$db->createCollection('kecsoaddresses'); 
-            
-        }
-    }
-    public static function InsertCouriors($courior)
-	{
-        $collection = self::$db->kecsocouriors;
-        return $collection->insertOne($courior);
-	}
-    public static function GetCouriors()
-    {
-        $collection = self::$db->kecsocouriors;
-        $options = ['ids' => ['courior' => 1]];
-        $list = $collection->find([], $options);
-        
-        return $list->toArray();
-   }
-   public static function GetCouriorById($id)
-   {
-        $collection = self::$db->kecsocouriors;
-        $courior = $collection->findOne(['_id' => new ObjectId($id)]);
-
-        return $courior;
-   }
-   public static function DeleteCouriors($id)
-   {
-       $collection = self::$db->kecsocouriors;
-       $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
-
-       return $result->getDeletedCount();
-   }
-   private static function CreateFilterById($id)
-   {
-       if(!($id instanceof ObjectId))
-       {
-           $id = new ObjectId($id);
-       }
-       $filter = ['_id' => $id];
-       return $filter;
-   }
-  public static function InsertCouriordata($data)
-   {
-       self::Init(); 
-       $collection = self::$db->selectCollection('kecsocourior');
-       return $collection->insertOne($data);
-   }
-  public static function GetCouriorData()
-   {
-       self::Init(); 
-       $collection = self::$db->selectCollection('kecsocourior');
-       $list = $collection->find([], ['projection' => ['name' => 1, 'date' => 1,'dateaddress' => 1,'age' => 1,'address' => 1,'mothername' => 1]]);
-       return $list->toArray();
-   }
-
-   public static function DeleteCouriordata($id)
-   {
-       self::Init(); 
-       $collection = self::$db->selectCollection('kecsocourior');
-       $result = $collection->deleteOne(['_id' => new \MongoDB\BSON\ObjectId($id)]);
-       return $result->getDeletedCount();
-   }
-   public static function UpdateCouriordata($id, $data)
-   {
-       self::Init();
-       $collection = self::$db->selectCollection('kecsocourior');
-       $result = $collection->updateOne(['_id' => new \MongoDB\BSON\ObjectId($id)], ['$set' => $data]);
-       return $result->getModifiedCount();
-   }
-   public static function InsertAddress($address)
-    {
-        self::Init();
-        $collection = self::$db->kecsocourior;
-
-    // Ellenőrizzük, hogy a 'month' kulcs létezik-e
-        if (!isset($address['month'])) {
-        $address['month'] = date('Y-m'); // vagy adjunk hozzá egy megfelelő alapértelmezett értéket, pl. az aktuális hónap
-    }
-
-    return $collection->insertOne($address);
-    }
-
-    public static function GetAddresses()
-    {
-        self::Init();
-        $collection = self::$db->kecsocourior;
-        $list = $collection->find([], ['projection' => ['day' => 1, 'name' => 1, 'time' => 1, 'total_addresses' => 1, 'delivered_addresses' => 1, 'final_return' => 1, 'live_return' => 1]]);
-        return $list->toArray();
-    }
-
-    public static function GetAddressById($id)
-    {
-        self::Init();
-        $collection = self::$db->kecsocourior;
-        $address = $collection->findOne(['_id' => new ObjectId($id)]);
-
-        return $address;
-    }
-
-    public static function UpdateAddress($id, $data)
-    {
-        self::Init();
-        $collection = self::$db->kecsocourior;
-
-    // Ellenőrizzük, hogy a 'month' kulcs létezik-e
-        if (!isset($data['month'])) {
-        $data['month'] = date('Y-m'); // vagy adjunk hozzá egy megfelelő alapértelmezett értéket, pl. az aktuális hónap
-    }
-
-    $result = $collection->updateOne(['_id' => new \MongoDB\BSON\ObjectId($id)], ['$set' => $data]);
-    return $result->getModifiedCount();
-    }
-
-    public static function DeleteAddress($id)
-    {
-        self::Init();
-        $collection = self::$db->kecsocourior;
-        $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
-        return $result->getDeletedCount();
-    }
-}*/
-?>
-
-	
+ 

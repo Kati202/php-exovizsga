@@ -124,37 +124,49 @@ class Kecso
         return $view;
     }
     
-    
 public function cardata($param): string
  {
-session_start(); 
-
-$carId = isset($param) ? $param : null;
-$view = IndexView::Begin();
-$view .= IndexView::StartTitle('Gépjármű adatai');
-$view .= CarsModel::Init();
 
 
+  $carId = isset($param) ? $param : null;
+  $view = IndexView::Begin();
+  $view .= IndexView::StartTitle('Gépjármű adatai');
+  $view .= CarsModel::Init();
 
-// Fájlfeltöltés kezelése
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
+
+
+   // Fájlfeltöltés kezelése
+   if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
     $view .= KecsoCarView::HandleFileUpload();
+   }
+
+   // Kép törlésének kezelése
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteImage'])) {
+    $carId = $_POST['carId'];
+    $imageId = $_POST['deleteImageId'];
+
+    $deleted = CarsModel::DeleteCarImage($carId, $imageId);
+    if ($deleted) {
+        $_SESSION['success'] = 'A kép sikeresen törölve.';
+    } else {
+        $_SESSION['errors'] = ['Hiba történt a kép törlése során.'];
+    }
+ }
+
+
+    $view .= KecsoCarView::CarData($carId);
+
+    $view .= IndexView::End();
+
+   return $view;
 }
 
-
-$view .= KecsoCarView::CarData($carId);
-
-
-$view .= IndexView::End();
-
-return $view;}
-
-public function carcost($param): string
-{   
+ public function carcost($param): string
+{
+    session_start(); 
     $view = IndexView::Begin();
     $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
 
-   
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
         $startDate = $_POST['startDate'] ?? date('Y-m-01');
         $endDate = $_POST['endDate'] ?? date('Y-m-t');
@@ -166,23 +178,40 @@ public function carcost($param): string
     // Autók költségeinek összesítése dátum és csoport szerint
     $cars = CarsModel::SumCostByDateAndGroup($startDate, $endDate);
 
+    $errors = [];
+
     // Autó költség beszúrása
     if (isset($_POST['newCarCost'])) {
         $carcost = [
-            'ids' =>  $_POST['ids'],
+            'ids' => $_POST['ids'],
             'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
             'part' => $_POST['part'],
             'cost' => $_POST['cost'],
         ];
-        CarsModel::InsertCarCost($carcost);
-        header("Location: " . Config::KECSO_URL_CARCOST);
-        exit();
+        if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
+            $errors[] = 'Minden mező kitöltése kötelező.';
+        }
+        if (!is_numeric($carcost['cost']) || $carcost['cost'] < 0) {
+            $errors[] = 'A költség csak nem negatív szám lehet.';
+        }
+    
+        if (empty($errors)) {
+            CarsModel::InsertCarCost($carcost);
+            $_SESSION['success'] = 'Az autó költség sikeresen hozzáadva.';
+            header("Location: " . Config::KECSO_URL_CARCOST);
+            exit();
+        } else {
+            $_SESSION['errors'] = $errors;
+            header("Location: " . Config::KECSO_URL_CARCOST);
+            exit();
+        }
     }
 
     // Autó költség törlése
     if (isset($_POST['deleteCarcost'])) {
         $carcostId = $_POST['deleteCarcostId'];
         CarsModel::DeleteCarCost($carcostId);
+        $_SESSION['success'] = 'Az autó költség sikeresen törölve.';
         header("Location: " . Config::KECSO_URL_CARCOST);
         exit();
     }
@@ -196,28 +225,66 @@ public function carcost($param): string
     // Autó költség szerkesztésének mentése
     if (isset($_POST['saveCarCost'])) {
         $carcost = [
-            'ids' =>  $_POST['ids'],
+            'ids' => $_POST['ids'],
             'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
             'part' => $_POST['part'],
             'cost' => $_POST['cost'],
         ];
-        CarsModel::UpdateCarCost($_POST['editCarCostId'], $carcost);
-        header("Location: " . Config::KECSO_URL_CARCOST);
-        exit();
+    
+        // Validáció: minden mező kitöltése kötelező
+        if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
+            $errors[] = 'Minden mező kitöltése kötelező.';
+        }
+    
+        // Költség validáció: nem lehet negatív, és 0 is elfogadott
+        if (!is_numeric($carcost['cost']) || $carcost['cost'] < 0) {
+            $errors[] = 'A költség csak nem negatív szám lehet.';
+        }
+    
+        if (empty($errors)) {
+            CarsModel::UpdateCarCost($_POST['editCarCostId'], $carcost);
+            $_SESSION['success'] = 'Az autó költség sikeresen frissítve.';
+            header("Location: " . Config::KECSO_URL_CARCOST);
+            exit();
+        } else {
+            $_SESSION['errors'] = $errors;
+            header("Location: " . Config::KECSO_URL_CARCOST);
+            exit();
+        }
     }
 
-    
-    $carcost = CarsModel::GetCarCost();
+    // Megjelenítés: sikeres üzenetek, hibaüzenetek kezelése
+    if (isset($_SESSION['success'])) {
+        $view .= '<div class="success-message">' . $_SESSION['success'] . '</div>';
+        unset($_SESSION['success']);
+    }
 
-    
+    if (isset($_SESSION['errors']) && !empty($_SESSION['errors'])) {
+        foreach ($_SESSION['errors'] as $error) {
+            $view .= '<div class="error-message">' . $error . '</div>';
+        }
+        unset($_SESSION['errors']);
+    }
+
+    // Autó költségek lekérése és megjelenítése
+    $carcost = CarsModel::GetCarCost();
     $view .= KecsoCarView::ShowCostByGroup($cars, $startDate, $endDate);
     $view .= KecsoCarView::CarCost($carcost, $editcarcost);
     $view .= IndexView::End();
 
     return $view;
 }
-
-
+private function customRound($number)
+{
+    $lastDigit = $number % 10;
+    if ($lastDigit <= 2) {
+        return floor($number / 10) * 10; 
+    } elseif ($lastDigit <= 6) {
+        return floor($number / 10) * 10 + 5; 
+    } else {
+        return ceil($number / 10) * 10; 
+    }
+}
 public function couriorData($param): string
 {
     $view = IndexView::Begin();
@@ -356,7 +423,6 @@ public function couriorData($param): string
 
     return $view;
 }
-
 public function courioraddress($param): string
 {
     // Oldal kezdete és session kezelése
@@ -394,6 +460,7 @@ public function courioraddress($param): string
 
     
     $deliveries = CouriorsModel::SumDeliveredAddressesByDateAndGroup($startDate, $endDate);
+    var_dump($deliveries);
 
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newAddress'])) {
@@ -405,7 +472,7 @@ public function courioraddress($param): string
         }
 
         
-        $requiredFields = ['name', 'ids', 'day', 'month', 'time', 'total_addresses', 'delivered_addresses', 'final_return', 'live_return'];
+        $requiredFields = ['name', 'ids', 'day', 'month', 'time', 'total_addresses', 'delivered_addresses'];
         $error = '';
 
         foreach ($requiredFields as $field) {
@@ -426,10 +493,10 @@ public function courioraddress($param): string
                     'time' => date('Y-m-d H:i:s', strtotime($_POST['time'])),
                     'total_addresses' => (int)$_POST['total_addresses'],
                     'delivered_addresses' => (int)$_POST['delivered_addresses'],
-                    'final_return' => (int)$_POST['final_return'],
-                    'live_return' => (int)$_POST['live_return']
+                    'final_return' => isset($_POST['final_return']) ? (int)$_POST['final_return'] : 0,
+                    'live_return' => isset($_POST['live_return']) ? (int)$_POST['live_return'] : 0
                 ];
-
+                // Cím hozzáadása
                 CouriorsModel::InsertAddress($address);
                 $_SESSION['success_message'] = 'Új cím adat sikeresen hozzáadva.';
                 header("Location: " . Config::KECSO_URL_COURIORADDRESS);
@@ -476,7 +543,7 @@ public function courioraddress($param): string
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['editAddressId'])) {
         $editAddressId = $_POST['editAddressId'];
         // Szükséges adatok ellenőrzése
-        $requiredFields = ['name', 'ids', 'day', 'month', 'time', 'total_addresses', 'delivered_addresses', 'final_return', 'live_return'];
+        $requiredFields = ['name', 'ids', 'day', 'month', 'time', 'total_addresses', 'delivered_addresses'];
         $error = '';
 
         foreach ($requiredFields as $field) {
@@ -497,8 +564,8 @@ public function courioraddress($param): string
                     'time' => date('Y-m-d H:i:s', strtotime($_POST['time'])),
                     'total_addresses' => (int)$_POST['total_addresses'],
                     'delivered_addresses' => (int)$_POST['delivered_addresses'],
-                    'final_return' => (int)$_POST['final_return'],
-                    'live_return' => (int)$_POST['live_return']
+                    'final_return' => isset($_POST['final_return']) ? (int)$_POST['final_return'] : 0,
+                    'live_return' => isset($_POST['live_return']) ? (int)$_POST['live_return'] : 0
                 ];
 
                 CouriorsModel::UpdateAddress($editAddressId, $address);
@@ -522,12 +589,12 @@ public function courioraddress($param): string
 
     // Megjelenítés összeállítása
     $view .= KecsoCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate);
+    
     $view .= KecsoCouriorView::CouriorsAddress($addresses, $editaddress ?? null);
     $view .= IndexView::End();
 
     return $view;
 }
-
 public static function depo($param): string
 {
     $view = IndexView::Begin();
@@ -611,10 +678,9 @@ public static function depo($param): string
     return $view;
     
 }
-
-
 public function disp($param): string
 {   
+    session_start();
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Diszpécserek elérhetőségei');
     $dispdata = DispModel::GetDispdata(); 
@@ -622,6 +688,9 @@ public function disp($param): string
 
     // Hibaüzenetek tömbje
     $errors = [];
+
+    // Sikeres üzenetek tömbje
+    $successMessages = [];
 
     // Űrlap beküldésének és validációinak kezelése
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -650,6 +719,7 @@ public function disp($param): string
 
                 if (empty($errors)) {
                     DispModel::InsertDispdata(['name' => $name, 'title' => $title, 'phone' => $phone]);
+                    $_SESSION['success'] = 'A diszpécser sikeresen hozzáadva.';
                     header("Location: " . Config::KECSO_URL_DISP);
                     exit();
                 }
@@ -660,6 +730,7 @@ public function disp($param): string
         if (isset($_POST['deleteDisp'])) {
             $deleteDispId = $_POST['deleteDispId'];
             DispModel::DeleteDispdata($deleteDispId);
+            $_SESSION['success'] = 'A diszpécser sikeresen törölve.';
             header("Location: " . Config::KECSO_URL_DISP);
             exit();
         }
@@ -699,6 +770,7 @@ public function disp($param): string
 
                 if (empty($errors)) {
                     DispModel::UpdateDispdata($editDispId, ['name' => $name, 'title' => $title, 'phone' => $phone]);
+                    $_SESSION['success'] = 'A diszpécser adatai sikeresen frissítve.';
                     header("Location: " . Config::KECSO_URL_DISP);
                     exit();
                 }
@@ -706,20 +778,25 @@ public function disp($param): string
         }
     }
 
-    // Ha van validációs hiba, megjelenítjük
+    // Sikerüzenet megjelenítése
+    if (isset($_SESSION['success'])) {
+        $view .= '<div class="success-message">' . $_SESSION['success'] . '</div>';
+        unset($_SESSION['success']);
+    }
+
+    // Hibák megjelenítése
     if (!empty($errors)) {
         foreach ($errors as $error) {
-            $view .= '<p style="color: red;">' . htmlspecialchars($error) . '</p>';
+            $view .= '<div class="error-message">' . $error . '</div>';
         }
     }
 
-    // Megjelenítjük a fő nézetet és az űrlapot
     $view .= KecsoDispView::Disp($dispdata, $editdisp);
     $view .= IndexView::CloseSection();
+    $view .= IndexView::End();
+
     return $view;
 }
-
-
 private static function isValidPhoneFormat($phone)
 {
     // Elfogadott karakterek: számok, szóköz, +, és a következő speciális karakterek: ()/-.
