@@ -3,9 +3,18 @@ namespace App;
 
 class Config
 {
+   
+    // MongoDB beállítások
     const MONGODB_HOST = 'localhost';
     const MONGODB_PORT = 27017;
-    const MONGODB_DATABASE = 'exovizsga';
+    
+    // Depókhoz tartozó felhasználónevek és jelszavak
+    const USERS = [
+        'kecso' => 'kecso12345',
+        'tatab' => 'tatab12345',
+        'halas' => 'halas12345',
+        'nyerges' => 'nyerges12345'
+    ];
     
     public const BASE_URL = 'http://localhost/php-exovizsga/public/';
     //Kecskeméti urlek
@@ -44,7 +53,7 @@ class Config
     public const NYERGES_URL_DEPO = self::BASE_URL . 'nyerges/depo4';
     public const NYERGES_URL_DISP = self::BASE_URL . 'nyerges/disp4';
 
-
+    public const AUTH_URL =self::BASE_URL.'index';
     public const HOME_URL = self::BASE_URL;
 }
 ?>

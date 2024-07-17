@@ -67,7 +67,7 @@ private static function DisplayCars()
 public static function CarData($carId)
     {
         $html = '<form method="post" action="'. Config::KECSO_URL_CARDATA .'" enctype="multipart/form-data">';
-        $html .= '<input type="hidden" name="carId" value="' . htmlspecialchars($carId) . '">';
+        $html .= '<input type="hidden" name="carId" value=if (!is_string($carId))';
         $html .= IndexView::CreateInput('Fálj neve', 'data');
         $html .= '<div>
                     <label for="file">Válassz egy fájlt:</label>
@@ -272,6 +272,17 @@ public static function CarData($carId)
 
     return $html;
     }
+    public static function customRound($number)
+    {
+    $lastDigit = $number % 10;
+    if ($lastDigit <= 2) {
+        return floor($number / 10) * 10; 
+    } elseif ($lastDigit <= 6) {
+        return floor($number / 10) * 10 + 5; 
+    } else {
+        return ceil($number / 10) * 10; 
+    }
+   }
 
   public static function ShowCostByGroup($cars, $startDate, $endDate)
     {

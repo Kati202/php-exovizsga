@@ -1,25 +1,13 @@
 <?php
-namespace App\Controllers;
-
-error_reporting(E_ALL);
-ini_set('display_errors', 'On');
+/*namespace App\Controllers;
 
 use App\Config;
-use App\Views\IndexView;
 
-class Home extends BaseController
+class Auth
 {
-    public function index(): string
-    {
-        $view = IndexView::Begin();
-        $view .= IndexView::Home();
-        $view .= IndexView::End();
-
-        return $view;
-    }
-    
     public function login()
     {
+        // Ellenőrzés a POST kérésre
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             $username = $_POST['username'];
             $password = $_POST['password'];
@@ -29,12 +17,12 @@ class Home extends BaseController
             if (array_key_exists($username, $users) && $users[$username] === $password) {
                 $_SESSION['user_id'] = $username; // Felhasználónév tárolása
                 $_SESSION['username'] = $username;
-                header('Location: ' . Config::BASE_URL . 'kecso'); // Vagy a megfelelő oldal, ahova irányítani szeretnéd
+                header('Location: ' . Config::BASE_URL . 'kecso'); // Sikeres bejelentkezés esetén átirányítás
                 exit();
             } else {
                 // Sikertelen bejelentkezés
                 $_SESSION['error_message'] = 'Hibás felhasználónév vagy jelszó.';
-                header('Location: ' . Config::BASE_URL . 'login.php');
+                header('Location: ' . Config::BASE_URL . 'login.php'); // Sikertelen bejelentkezés esetén visszairányítás
                 exit();
             }
         }
@@ -73,6 +61,6 @@ class Home extends BaseController
 
         return $content;
     }
-}
+}*/
 ?>
 

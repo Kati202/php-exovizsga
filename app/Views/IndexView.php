@@ -69,15 +69,10 @@ class IndexView
                     <input type="text" name="' . $name . '" id="' . $name . '" value="' . htmlspecialchars($value) . '">
                 </div>';
     }
-    public static function ShowDepoButton()
+    public static function Login()
     {
-     $html = '<form method="post" action="' . Config::HALAS_URL_DEPO  . '">';
-     $html .= '<button type="submit" name="showDepo">Depó adatok megtekintése</button>';
-     $html .= '</form>';
- 
-     return $html;
-    } 
-    
+        return self::loadView('template/login');
+    }
 
     private static function loadView($viewPath)
     {

@@ -8,10 +8,12 @@ use App\Controllers\Halas;
 use App\Controllers\Nyerges;
 
 $response = '';
+use App\Router;
 
 $page = isset($_GET['page']) ? $_GET['page'] : '';
 $operation = isset($_GET['operation']) ? $_GET['operation'] : '';
 $param = isset($_GET['param']) ? $_GET['param'] : '';
+$param = $_POST;
 
 switch ($page) {
     case 'kecso':
@@ -143,6 +145,7 @@ switch ($page) {
         $response = $homeController->index();
         break;
 }
+
 
 echo $response;
 ?>

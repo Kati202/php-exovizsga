@@ -16,11 +16,36 @@ use App\Models\HalasModel\DispModel;
 use App\Requests\HalasRequest;
 use App\Requests\KecsoRequest;
 use App\Config;
+use App\DatabaseManager;
 
-class Halas
+class Halas extends BaseController
 {
 public function halas(): string
 {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+        // MongoDB kapcsolat inicializálása
+        $databaseManager = new DatabaseManager();
+        $usersCollection = $databaseManager->connectToMongoDB()->users;
+
+        $username = $_POST['halas'];
+        $password = $_POST['halas12345'];
+
+        // Keresés a felhasználók között
+        $user = $usersCollection->findOne(['username' => $username, 'password' => $password]);
+
+        if ($user) {
+            $_SESSION['user_id'] = (string) $user['_id'];
+            $_SESSION['username'] = $user['username'];
+            header('Location: ' . $_SERVER['REQUEST_URI']);
+            exit();
+        } else {
+            // Sikertelen bejelentkezés
+            $_SESSION['error_message'] = 'Hibás felhasználónév vagy jelszó.';
+            header('Location: ' . $_SERVER['REQUEST_URI']);
+            exit();
+        }
+    }
+
         // Kezdeti nézet 
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Halasi depó főoldal');

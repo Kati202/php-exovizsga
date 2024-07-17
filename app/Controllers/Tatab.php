@@ -15,11 +15,36 @@ use App\Models\TatabModel\DeposModel;
 use App\Models\TatabModel\DispModel;
 use App\Requests\TatabRequest;
 use App\Config;
+use App\DatabaseManager;
 
-class Tatab
+class Tatab extends BaseController
 {
 public function tatab(): string
 {
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+        // MongoDB kapcsolat inicializálása
+        $databaseManager = new DatabaseManager();
+        $usersCollection = $databaseManager->connectToMongoDB()->users;
+
+        $username = $_POST['tatab'];
+        $password = $_POST['tatab12345'];
+
+        // Keresés a felhasználók között
+        $user = $usersCollection->findOne(['username' => $username, 'password' => $password]);
+
+        if ($user) {
+            $_SESSION['user_id'] = (string) $user['_id'];
+            $_SESSION['username'] = $user['username'];
+            header('Location: ' . $_SERVER['REQUEST_URI']);
+            exit();
+        } else {
+            // Sikertelen bejelentkezés
+            $_SESSION['error_message'] = 'Hibás felhasználónév vagy jelszó.';
+            header('Location: ' . $_SERVER['REQUEST_URI']);
+            exit();
+        }
+    }
         // Kezdeti nézet 
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Tatabányai depó főoldal');

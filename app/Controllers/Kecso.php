@@ -16,20 +16,48 @@ use App\Models\KecsoModel\DispModel;
 use App\Requests\KecsoRequest;
 use App\Config;
 use Exception;
+use App\DatabaseManager;
 
-
-class Kecso
+class Kecso extends BaseController
 {
-    public function kecso (): string
+  
+public function kecso(): string
     {
         session_start();
-    
+       
+
+        // Bejelentkezés kezelése
+        /*if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+            // MongoDB kapcsolat inicializálása
+            $databaseManager = new DatabaseManager();
+            $usersCollection = $databaseManager->connectToMongoDB()->users;
+
+            $username = $_POST['kecso'];
+            $password = $_POST['kecso12345'];
+
+            // Keresés a felhasználók között
+            $user = $usersCollection->findOne(['username' => $username, 'password' => $password]);
+
+            if ($user) {
+                $_SESSION['user_id'] = (string) $user['_id'];
+                $_SESSION['username'] = $user['username'];
+                header('Location: ' . Config::BASE_URL . 'kecso'); // Vagy a megfelelő oldal, ahova irányítani szeretnéd
+                exit();
+            } else {
+                // Sikertelen bejelentkezés
+                $_SESSION['error_message'] = 'Hibás felhasználónév vagy jelszó.';
+                header('Location: ' . Config::BASE_URL . 'login.php');
+                exit();
+            }
+        }*/
+
+        // Oldal tartalmának összeállítása
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
-    
+
         // Gépjárművek kezelése
         $view .= CarsModel::Init();
-    
+
         // Üzenetek megjelenítése
         if (isset($_SESSION['success_message'])) {
             $view .= '<p class="success-message">' . htmlspecialchars($_SESSION['success_message']) . '</p>';
@@ -39,7 +67,7 @@ class Kecso
             $view .= '<p class="error-message">' . htmlspecialchars($_SESSION['error_message']) . '</p>';
             unset($_SESSION['error_message']);
         }
-    
+
         // Új gépjármű hozzáadása
         if (KecsoRequest::CarsInsert()) {
             $ids = $_POST['ids'] ?? '';
@@ -57,7 +85,7 @@ class Kecso
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
-    
+
         // Gépjármű törlése
         if (isset($_POST['deleteCar'])) {
             $carId = $_POST['deleteCarId'] ?? '';
@@ -68,21 +96,21 @@ class Kecso
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
-    
+
         // Gépjárművek megjelenítése
         $view .= KecsoCarView::ShowCar();
-    
+
         // Futárok kezelése
         if (KecsoRequest::CouriorInsert()) {
             $ids = $_POST['ids'] ?? '';
             $name = $_POST['name'] ?? '';
-    
+
             // Azonosító validálása: csak számok lehetnek
             if (empty($ids) || empty($name)) {
                 $_SESSION['error_message'] = 'Futár név hozzáadáshoz minden mező kitöltése kötelező!';
             } else if (ctype_digit($ids) && preg_match('/^[\p{L}\s]+$/u', $name)) {
                 // Az $name változóban csak betűk és szóközök lehetnek
-                $courior = ['ids' => (int)$ids, 'name' => $name];
+                $courior = ['ids' => (int) $ids, 'name' => $name];
                 $result = CouriorsModel::InsertCouriors($courior);
                 if ($result) {
                     $_SESSION['success_message'] = 'A futár név sikeresen hozzá lett adva.';
@@ -95,7 +123,7 @@ class Kecso
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
-    
+
         // Futár törlése
         if (isset($_POST['deleteCourior'])) {
             $couriorId = $_POST['deleteCouriorId'] ?? '';
@@ -106,23 +134,26 @@ class Kecso
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
-    
-        // Futárok megjelenítése növekvő sorrendben 
+
+        // Futárok megjelenítése növekvő sorrendben
         $couriors = CouriorsModel::GetCouriors();
-        usort($couriors, function($a, $b) {
+        usort($couriors, function ($a, $b) {
             return $a['ids'] - $b['ids'];
         });
         $view .= KecsoCouriorView::ShowCourior($couriors);
-    
+
         // Gombok megjelenítése
         $view .= KecsoDepoView::ShowDepoButton();
         $view .= KecsoDispView::ShowDispButton();
-    
+
         // Oldalzárás
         $view .= IndexView::End();
-    
+
         return $view;
     }
+    
+
+
     
 public function cardata($param): string
  {
@@ -186,7 +217,7 @@ public function cardata($param): string
             'ids' => $_POST['ids'],
             'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
             'part' => $_POST['part'],
-            'cost' => $_POST['cost'],
+            'cost' => KecsoCarView::customRound($_POST['cost']),
         ];
         if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
             $errors[] = 'Minden mező kitöltése kötelező.';
@@ -228,10 +259,10 @@ public function cardata($param): string
             'ids' => $_POST['ids'],
             'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
             'part' => $_POST['part'],
-            'cost' => $_POST['cost'],
+            'cost' => KecsoCarView::customRound($_POST['cost']),
         ];
     
-        // Validáció: minden mező kitöltése kötelező
+       
         if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
             $errors[] = 'Minden mező kitöltése kötelező.';
         }
@@ -273,17 +304,6 @@ public function cardata($param): string
     $view .= IndexView::End();
 
     return $view;
-}
-private function customRound($number)
-{
-    $lastDigit = $number % 10;
-    if ($lastDigit <= 2) {
-        return floor($number / 10) * 10; 
-    } elseif ($lastDigit <= 6) {
-        return floor($number / 10) * 10 + 5; 
-    } else {
-        return ceil($number / 10) * 10; 
-    }
 }
 public function couriorData($param): string
 {
