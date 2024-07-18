@@ -69,6 +69,18 @@ class IndexView
                     <input type="text" name="' . $name . '" id="' . $name . '" value="' . htmlspecialchars($value) . '">
                 </div>';
     }
+    public static function customRound($number)
+    {
+    $lastDigit = $number % 10;
+    if ($lastDigit <= 2) {
+        return floor($number / 10) * 10; 
+    } elseif ($lastDigit <= 6) {
+        return floor($number / 10) * 10 + 5; 
+    } else {
+        return ceil($number / 10) * 10; 
+    }
+    }
+    
     public static function Login()
     {
         return self::loadView('template/login');

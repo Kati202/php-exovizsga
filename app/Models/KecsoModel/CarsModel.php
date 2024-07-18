@@ -11,7 +11,8 @@ class CarsModel
 {
     private static $db;
     private static $client;
-    private static $collectionName = 'kecsocar_images';
+    private static $collectionName = 'kecsocarimages';
+ 
 
     public static function Init()
     {
@@ -59,41 +60,35 @@ class CarsModel
         return $result->getDeletedCount();
     }
 
-    public static function InsertCarImage($carId, $imageData)
-    {
-        self::Init();
-        $collection = self::$db->selectCollection(self::$collectionName);
+    public static function InsertCarImage($imageData)
+{
+    self::Init();
+    $collection = self::$db->selectCollection(self::$collectionName);
 
-        try {
-            // Az adatok beszúrása az adatbázisba ObjectId használatával
-            $result = $collection->updateOne(
-                ['_id' => new ObjectId($carId)],
-                ['$push' => ['images' => $imageData]]
-            );
+    try {
+        // Általános helyre beszúrjuk a képet
+        $result = $collection->insertOne($imageData);
 
-            if ($result->getModifiedCount() > 0) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch (\Throwable $th) {
-            // Hibakezelés, ha valami nem sikerülne
-            
+        if ($result->getInsertedCount() > 0) {
+            return true;
+        } else {
             return false;
         }
+    } catch (\Throwable $th) {
+        // Hibakezelés, ha valami nem sikerülne
+        return false;
     }
+}
 
     public static function GetCarImages($carId)
     {
-        self::init();
+        self::Init();
         $collection = self::$db->selectCollection(self::$collectionName);
-
         try {
-            $car = $collection->findOne(['_id' => new ObjectId($carId)]);
-            return isset($car['images']) ? $car['images'] : [];
+            $images = $collection->find();
+            return $images;
         } catch (\Throwable $th) {
             // Hibakezelés, ha valami nem sikerülne
-            
             return [];
         }
     }
@@ -104,19 +99,15 @@ class CarsModel
         $collection = self::$db->selectCollection(self::$collectionName);
 
         try {
-            $result = $collection->updateOne(
-                ['_id' => new ObjectId($carId)],
-                ['$pull' => ['images' => ['_id' => $imageId]]]
-            );
-
-            if ($result->getModifiedCount() > 0) {
+            $result = $collection->deleteOne(['_id' => new ObjectId($imageId)]);
+    
+            if ($result->getDeletedCount() > 0) {
                 return true;
             } else {
                 return false;
             }
         } catch (\Throwable $th) {
             // Hibakezelés, ha valami nem sikerülne
-            echo 'Hiba történt: ' . $th->getMessage();
             return false;
         }
     }

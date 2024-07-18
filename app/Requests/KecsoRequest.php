@@ -3,6 +3,10 @@ namespace App\Requests;
 
 class KecsoRequest
 {
+    public static function Delete()
+    {
+        return isset($_POST['guaranteedDeleteId'],$_POST['guaranteedDelete']);
+    }
     //Cars
     public static function CarsInsert()
     {
@@ -55,7 +59,7 @@ class KecsoRequest
     
     public static function CouriorDelete()
     {
-        return isset($_POST['deleteCouriorId'], $_POST['deleteCourior']);
+        return isset($_POST['deleteCouriorId'], $_POST['deleteCourior'],);
     }
     
     public static function CouriorUpdate()

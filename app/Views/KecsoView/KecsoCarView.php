@@ -52,7 +52,7 @@ private static function DisplayCars()
         $html .= '</tbody></table>';
 
         
-        $html .= '<div>';
+        $html .= '<div class="buttonss">';
         $html .= '<a href="'.Config::KECSO_URL_CARDATA.'">Gépjárművek adatai</a>';
         $html .= '<a href="'.Config::KECSO_URL_CARCOST.'">Javítási költségek</a>';
         $html .= '</div>';
@@ -65,31 +65,29 @@ private static function DisplayCars()
 }
 //Cardata aloldal
 public static function CarData($carId)
-    {
-        $html = '<form method="post" action="'. Config::KECSO_URL_CARDATA .'" enctype="multipart/form-data">';
-        $html .= '<input type="hidden" name="carId" value=if (!is_string($carId))';
-        $html .= IndexView::CreateInput('Fálj neve', 'data');
-        $html .= '<div>
-                    <label for="file">Válassz egy fájlt:</label>
-                    <input type="file" name="file" id="file">
-                  </div>';
-        $html .= '<button type="submit" name="upload">Fájl/kép hozzáadása</button>';
-        $html .= '</form>';
+{
+    $html = '<form method="post" action="'. htmlspecialchars(Config::KECSO_URL_CARDATA) .'" enctype="multipart/form-data">';
+    $html .= '<input type="hidden" name="carId" value="'. htmlspecialchars((string)$carId) .'">';
+    $html .= IndexView::CreateInput('Fájl neve', 'data');
+    $html .= '<div>
+                <label for="file">Válassz egy fájlt:</label>
+                <input type="file" name="file" id="file">
+              </div>';
+    $html .= '<button type="submit" name="upload">Fájl/kép hozzáadása</button>';
+    $html .= '</form>';
 
-        // Feltöltött képek listázása
-        $html .= self::ListUploadedImages($carId);
+    // Feltöltött képek listázása
+    $html .= self::ListUploadedImages($carId);
 
-        return $html;
-    }
-    public static function HandleFileUpload(): string
-   {
+    return $html;
+}
+public static function HandleFileUpload(): string
+{
     $html = '';
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
         $carId = $_POST['carId'];
-        $file = $_FILES['file'];
-
-        
+        $file = $_FILES['filename'];
 
         if ($file['error'] === UPLOAD_ERR_OK) {
             $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
@@ -97,25 +95,30 @@ public static function CarData($carId)
 
             if (in_array($detectedType, $allowedTypes)) {
                 $uploadDir = 'uploads/';
-                $selectedFolder = 'kecso';
+                $selectedFolder = 'kecso/';
 
                 if (!is_dir($uploadDir . $selectedFolder)) {
                     mkdir($uploadDir . $selectedFolder, 0777, true);
                 }
 
                 $uniqueFileName = uniqid() . '_' . basename($file['name']);
-                $uploadFile = $uploadDir . $selectedFolder . '/' . $uniqueFileName;
+                $uploadFile = $uploadDir . $selectedFolder . $uniqueFileName;
 
                 if (move_uploaded_file($file['tmp_name'], $uploadFile)) {
                     $imageData = [
-                        'data' => $_POST['data'],
-                        'file' => $uniqueFileName
+                        'filename' => $uniqueFileName  // Csak a fájlnév tárolása
                     ];
-                    CarsModel::InsertCarImage($carId, $imageData);
 
-                    // Sikeres feltöltés esetén átirányítás
-                    header("Location: " . Config::KECSO_URL_CARDATA . "?param=" . htmlspecialchars($carId));
-                    exit();
+                    // Beszúrjuk az adatbázisba csak a fájlnévvel
+                    $inserted = CarsModel::InsertCarImage($carId, $imageData);
+
+                    if ($inserted) {
+                        // Sikeres beszúrás esetén átirányítás
+                        header("Location: " . htmlspecialchars(Config::KECSO_URL_CARDATA) . "?param=" . htmlspecialchars($carId));
+                        exit();
+                    } else {
+                        $html .= "Hiba történt a kép feltöltése során.";
+                    }
                 } else {
                     $html .= "Hiba történt a kép feltöltése során.";
                 }
@@ -128,9 +131,9 @@ public static function CarData($carId)
     }
 
     return $html;
-   }
-  
-   private static function ListUploadedImages($carId)
+}
+    
+private static function ListUploadedImages($carId)
 {
     $uploadDir = 'uploads/kecso/';
     $carImages = CarsModel::GetCarImages($carId);
@@ -140,11 +143,16 @@ public static function CarData($carId)
     if (!empty($carImages)) {
         $html .= '<ul>';
         foreach ($carImages as $image) {
-            $imageUrl = $uploadDir . $image['file'];
+            $imageUrl = $uploadDir . $image['filename']; // Felhasználjuk a 'filename' mezőt
 
             $html .= '<li>';
             $html .= '<img src="' . htmlspecialchars($imageUrl) . '" alt="Feltöltött kép">';
             $html .= '<p>Fájl neve: <a href="' . htmlspecialchars($imageUrl) . '" target="_blank">' . htmlspecialchars($image['data']) . '</a></p>';
+            $html .= '<form method="post">';
+            $html .= '<input type="hidden" name="carId" value="'. htmlspecialchars($carId) .'">';
+            $html .= '<input type="hidden" name="deleteImageId" value="'. htmlspecialchars($image['_id']) .'">'; // '_id' mező az adatbázisban
+            $html .= '<button type="submit" name="deleteImage">Kép törlése</button>';
+            $html .= '</form>';
             $html .= '</li>';
         }
         $html .= '</ul>';
@@ -220,7 +228,7 @@ public static function CarData($carId)
                         <td>' . htmlspecialchars($item['part'] ?? '') . '</td>
                         <td>' . htmlspecialchars($item['cost'] ?? '') . '</td>
                         <td>
-                            <form method="post" action="' . Config::KECSO_URL_CARCOST . '?operation=carcost&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
+                           <form method="post" action="' . Config::KECSO_URL_CARCOST . '?operation=carcost&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
                              <input type="hidden" name="updateCarCostId" value="' . ($item['_id'] ?? '') . '">
                              <button type="submit" name="updateCarcost">Szerkesztés</button>
                             </form>
@@ -230,6 +238,7 @@ public static function CarData($carId)
                                 <input type="hidden" name="param" value="' . ($item['_id'] ?? '') . '">
                                 <button type="submit" name="deleteCarcost">Törlés</button>
                             </form>
+                        
                         </td>
                     </tr>';
     
@@ -243,7 +252,10 @@ public static function CarData($carId)
     
         return $html;
     }
-    
+    /*public static function ShowConfirmDeleteScript()
+   {
+    return '<script src="public/src/confirmDelete.js"></script>';
+   }*/
     public static function CreateCarCostForm()
     {
         $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '">';
@@ -272,55 +284,47 @@ public static function CarData($carId)
 
     return $html;
     }
-    public static function customRound($number)
-    {
-    $lastDigit = $number % 10;
-    if ($lastDigit <= 2) {
-        return floor($number / 10) * 10; 
-    } elseif ($lastDigit <= 6) {
-        return floor($number / 10) * 10 + 5; 
-    } else {
-        return ceil($number / 10) * 10; 
-    }
-   }
+   
 
-  public static function ShowCostByGroup($cars, $startDate, $endDate)
-    {
-        $html = '<h2>Rendszám szerint alkatrész árak összesítése (' . $startDate . ' - ' . $endDate . ')</h2>';
+    public static function ShowCostByGroup($cars, $startDate, $endDate)
+{
+    $html = '<h2>Rendszám szerint alkatrész árak összesítése (' . htmlspecialchars($startDate) . ' - ' . htmlspecialchars($endDate) . ')</h2>';
 
-        if (!empty($deliveries)) {
-            $html .= '<table border="1" cellpadding="10">
-                        <thead>
-                            <tr>
-                                <th>Rendszám</th>
-                                <th>Költségek</th>
-                            </tr>
-                        </thead>
-                        <tbody>';
+    if (!empty($cars)) {
+        $html .= '<table border="1" cellpadding="10">
+                    <thead>
+                        <tr>
+                            <th>Rendszám</th>
+                            <th>Költségek</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
 
-            foreach ($cars as $car) {
-                $html .= '<tr>
-                            <td>' . htmlspecialchars($car['ids'] ?? '') . '</td>
-                            <td>' . htmlspecialchars($car['cost'] ?? '') . '</td>
-                          </tr>';
-            }
-
-            $html .= '</tbody></table>';
-        } else {
-            $html .= '<p>Nincs adat az időszakra.</p>';
+        foreach ($cars as $car) {
+            $html .= '<tr>
+                        <td>' . htmlspecialchars($car['ids'] ?? '') . '</td>
+                        <td>' . htmlspecialchars($car['cost'] ?? '') . '</td>
+                      </tr>';
         }
 
-        // Időszak kiválasztó űrlap megjelenítése
-        $html .= '<form method="post" action="' . Config::KECSO_URL_CARCOST . '">
-                    <label for="startDate">Kezdő dátum:</label>
-                    <input type="date" id="startDate" name="startDate" value="' . htmlspecialchars($startDate) . '">
-                    <label for="endDate">Vég dátum:</label>
-                    <input type="date" id="endDate" name="endDate" value="' . htmlspecialchars($endDate) . '">
-                    <button type="selectTime">Szűrés</button>
-                  </form>';
-
-        return $html;
+        $html .= '</tbody></table>';
+    } else {
+        $html .= '<p>Nincs adat az időszakra.</p>';
     }
+
+    // Időszak kiválasztó űrlap megjelenítése
+    $html .= '<form method="post" action="' . htmlspecialchars(Config::KECSO_URL_CARCOST) . '">';
+    $html .= '<label for="startDate">Kezdő dátum:</label>';
+    $html .= '<input type="date" id="startDate" name="startDate" value="' . htmlspecialchars($startDate) . '">';
+    $html .= '<label for="endDate">Vég dátum:</label>';
+    $html .= '<input type="date" id="endDate" name="endDate" value="' . htmlspecialchars($endDate) . '">';
+    $html .= '<button type="submit" name="filter">Szűrés</button>';
+    $html .= '</form>';
+
+    return $html;
+}
+
+   
 
 }
   

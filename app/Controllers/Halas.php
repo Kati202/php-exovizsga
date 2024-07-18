@@ -13,265 +13,338 @@ use App\Models\HalasModel\CarsModel;
 use App\Models\HalasModel\CouriorsModel;
 use App\Models\HalasModel\DeposModel;
 use App\Models\HalasModel\DispModel;
-use App\Requests\HalasRequest;
 use App\Requests\KecsoRequest;
 use App\Config;
 use App\DatabaseManager;
 
 class Halas extends BaseController
 {
-public function halas(): string
-{
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-        // MongoDB kapcsolat inicializálása
-        $databaseManager = new DatabaseManager();
-        $usersCollection = $databaseManager->connectToMongoDB()->users;
+    public function halas(): string
+    {
+        session_start();
+       
 
-        $username = $_POST['halas'];
-        $password = $_POST['halas12345'];
+        // Bejelentkezés kezelése
+        /*if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+            // MongoDB kapcsolat inicializálása
+            $databaseManager = new DatabaseManager();
+            $usersCollection = $databaseManager->connectToMongoDB()->users;
 
-        // Keresés a felhasználók között
-        $user = $usersCollection->findOne(['username' => $username, 'password' => $password]);
+            $username = $_POST['kecso'];
+            $password = $_POST['kecso12345'];
 
-        if ($user) {
-            $_SESSION['user_id'] = (string) $user['_id'];
-            $_SESSION['username'] = $user['username'];
-            header('Location: ' . $_SERVER['REQUEST_URI']);
-            exit();
-        } else {
-            // Sikertelen bejelentkezés
-            $_SESSION['error_message'] = 'Hibás felhasználónév vagy jelszó.';
-            header('Location: ' . $_SERVER['REQUEST_URI']);
-            exit();
-        }
-    }
+            // Keresés a felhasználók között
+            $user = $usersCollection->findOne(['username' => $username, 'password' => $password]);
 
-        // Kezdeti nézet 
+            if ($user) {
+                $_SESSION['user_id'] = (string) $user['_id'];
+                $_SESSION['username'] = $user['username'];
+                header('Location: ' . Config::BASE_URL . 'kecso'); // Vagy a megfelelő oldal, ahova irányítani szeretnéd
+                exit();
+            } else {
+                // Sikertelen bejelentkezés
+                $_SESSION['error_message'] = 'Hibás felhasználónév vagy jelszó.';
+                header('Location: ' . Config::BASE_URL . 'login.php');
+                exit();
+            }
+        }*/
+
+        // Oldal tartalmának összeállítása
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Halasi depó főoldal');
 
-      
-       /* $view.=CarsModel::Init();
+        // Gépjárművek kezelése
+        $view .= CarsModel::Init();
+
+        // Üzenetek megjelenítése
+        if (isset($_SESSION['success_message'])) {
+            $view .= '<p class="success-message">' . htmlspecialchars($_SESSION['success_message']) . '</p>';
+            unset($_SESSION['success_message']);
+        }
+        if (isset($_SESSION['error_message'])) {
+            $view .= '<p class="error-message">' . htmlspecialchars($_SESSION['error_message']) . '</p>';
+            unset($_SESSION['error_message']);
+        }
+
         // Új gépjármű hozzáadása
         if (KecsoRequest::CarsInsert()) {
-            $car = [
-                'license' => $_POST['license']
-            ];
-            CarsModel::InsertCar($car);
-            header("Location: " . $_SERVER['REQUEST_URI']); 
+            $ids = $_POST['ids'] ?? '';
+            if (!empty($ids)) {
+                $car = ['ids' => $ids];
+                $result = CarsModel::InsertCar($car);
+                if ($result) {
+                    $_SESSION['success_message'] = 'A gépjármű rendszáma sikeresen hozzáadva.';
+                } else {
+                    $_SESSION['error_message'] = 'Már létezik ilyen rendszámmal rendelkező gépjármű.';
+                }
+            } else {
+                $_SESSION['error_message'] = 'Gépjármű rendszámának hozzáadáshoz az űrlap mező kitöltése kötelező!';
+            }
+            header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
-        //Gépjármű törlése
+
+        // Gépjármű törlése
         if (isset($_POST['deleteCar'])) {
-            $carId = $_POST['deleteCarId'];
-            CarsModel::DeleteCar($carId);
-            header("Location: " . $_SERVER['REQUEST_URI']); 
+            $carId = $_POST['deleteCarId'] ?? '';
+            if (!empty($carId)) {
+                CarsModel::DeleteCar($carId);
+                $_SESSION['success_message'] = 'A gépjűrmű rendszáma sikeresen törölve.';
+            }
+            header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
-        $view.=KecsoCarView::ShowCar();
-       
-        
-        $view.=CouriorsModel::Init();
-        //Új futár hozzáadása
+
+        // Gépjárművek megjelenítése
+        $view .= HalasCarView::ShowCar();
+
+        // Futárok kezelése
         if (KecsoRequest::CouriorInsert()) {
-            $courior = 
-            [
-                'ids' => $_POST['ids'],
-                'name' => $_POST['name']
-            ];
-            CouriorsModel::InsertCouriors($courior);
-            header("Location: " . $_SERVER['REQUEST_URI']); 
+            $ids = $_POST['ids'] ?? '';
+            $name = $_POST['name'] ?? '';
+
+            // Azonosító validálása: csak számok lehetnek
+            if (empty($ids) || empty($name)) {
+                $_SESSION['error_message'] = 'Futár hozzáadáshoz minden mező kitöltése kötelező!';
+            } else if (ctype_digit($ids) && preg_match('/^[\p{L}\s]+$/u', $name)) {
+                // Az $name változóban csak betűk és szóközök lehetnek
+                $courior = ['ids' => (int) $ids, 'name' => $name];
+                $result = CouriorsModel::InsertCouriors($courior);
+                if ($result) {
+                    $_SESSION['success_message'] = 'A futár adatai sikeresen hozzáadva.';
+                } else {
+                    $_SESSION['error_message'] = 'Már létezik ilyen azonosítóval vagy névvel futár.';
+                }
+            } else {
+                $_SESSION['error_message'] = 'Az azonosító mező csak számokat tartalmazhat, a név mező pedig csak betűket!';
+            }
+            header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
-        //Futár törlése
+
+        // Futár törlése
         if (isset($_POST['deleteCourior'])) {
-            $couriorId = $_POST['deleteCouriorId'];
-            CouriorsModel::DeleteCouriors($couriorId);
-            header("Location: " . $_SERVER['REQUEST_URI']); 
+            $couriorId = $_POST['deleteCouriorId'] ?? '';
+            if (!empty($couriorId)) {
+                CouriorsModel::DeleteCouriors($couriorId);
+                $_SESSION['success_message'] = 'A futár adatai sikeresen törölve.';
+            }
+            header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
         }
-       
 
-        $view .=KecsoCouriorView::ShowCourior();*/
-        $view .=HalasDepoView::ShowDepoButton();
-        $view .=HalasDispView::ShowDispButton();
+        // Futárok megjelenítése növekvő sorrendben
+        $couriors = CouriorsModel::GetCouriors();
+        usort($couriors, function ($a, $b) {
+            return $a['ids'] - $b['ids'];
+        });
+        $view .= HalasCouriorView::ShowCourior($couriors);
 
-        //Oldalzárás
+        // Gombok megjelenítése
+        $view .= HalasDepoView::ShowDepoButton();
+        $view .= HalasDispView::ShowDispButton();
+
+        // Oldalzárás
         $view .= IndexView::End();
 
         return $view;
-}
-public function cardata3($param): string
-{
- $carId = isset($param) ? $param : null;
- $view = IndexView::Begin();
- $view .= IndexView::StartTitle('Gépjármű adatai');
- $view .= CarsModel::Init();
-
-$uploadedFileName = '';
-
-// Fájlfeltöltés kezelése
-$view .= KecsoCarView::HandleFileUpload();
-
-// Űrlap megjelenítése és feltöltött képek listázása
-$view .= KecsoCarView::CarData($carId, $uploadedFileName);
-
-// Vége
-$view .= IndexView::End();
-
-return $view;}
-
-public function carcost3($param): string
-{
-    $carId = isset($param) ? $param : null;
-    $view = CarsModel::Init();
-    //$view = CarsModel::InsertCarCost();
-    $view .= IndexView::Begin();
-    $view .= IndexView::StartTitle('Javítási költségek');
-    $view .= KecsoCarView::CarCost($carId);
-   
-
-    $carCosts = CarsModel::GetCarCosts($carId);
-    if (!empty($carCosts)) {
-        // A költségek feldolgozása és hozzáadása a nézethez
-        foreach ($carCosts as $cost) {
-            $view .= '<p>Date: ' . $cost['date'] . ', Part: ' . $cost['part'] . ', Price: ' . $cost['price'] . '</p>';
-        }
-    } else {
-        $view .= '<p>Nincsenek költségek.</p>';
     }
     
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') 
-    {
-        // Javítási költség hozzáadása
-        if (KecsoRequest::AddCarCost()) 
-        {
-            $carCost = [
-                'carId' => new \MongoDB\BSON\ObjectId($carId),  // Győződj meg róla, hogy az ObjectId helyesen van beállítva
-                'date' => new \MongoDB\BSON\UTCDateTime(strtotime($_POST['date']) * 1000),
-                'part' => $_POST['part'],
-                'price' => floatval($_POST['price'])
-            ];
-            
 
-            // Hívás a Model-be, hogy hozzáadjuk az új költséget
-            $result = CarsModel::InsertCarCost($carCost);
+    
+public function cardata3($param): string
+ {
 
-            if ($result) 
-            {
-                header("Location: " . Config::KECSO_URL_CARCOST . "?param=" . $carId);
-                exit();
-            } 
-            else 
-            {
-                $view .= '<p>Hiba történt a költség hozzáadása során.</p>';
-            }
+
+  $carId = isset($param) ? $param : null;
+  $view = IndexView::Begin();
+  $view .= IndexView::StartTitle('Gépjármű adatai');
+  $view .= CarsModel::Init();
+
+
+
+   // Fájlfeltöltés kezelése
+   if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
+    $view .= HalasCarView::HandleFileUpload();
+   }
+
+   // Kép törlésének kezelése
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteImage'])) {
+    $carId = $_POST['carId'];
+    $imageId = $_POST['deleteImageId'];
+
+    $deleted = CarsModel::DeleteCarImage($carId, $imageId);
+    if ($deleted) {
+        $_SESSION['success'] = 'A kép sikeresen törölve.';
+    } else {
+        $_SESSION['errors'] = ['Hiba történt a kép törlése során.'];
+    }
+ }
+
+
+    $view .= HalasCarView::CarData($carId);
+
+    $view .= IndexView::End();
+
+   return $view;
+}
+
+ public function carcost3($param): string
+{
+    session_start(); 
+    $view = IndexView::Begin();
+    $view .= IndexView::StartTitle('Kiskunhalasi depó gépjárműveinek költségei');
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
+        $startDate = $_POST['startDate'] ?? date('Y-m-01');
+        $endDate = $_POST['endDate'] ?? date('Y-m-t');
+    } else {
+        $startDate = date('Y-m-01');
+        $endDate = date('Y-m-t');
+    }
+
+    // Autók költségeinek összesítése dátum és csoport szerint
+    $cars = CarsModel::SumCostByDateAndGroup($startDate, $endDate);
+
+    $errors = [];
+
+    // Autó költség beszúrása
+    if (isset($_POST['newCarCost'])) {
+        $carcost = [
+            'ids' => $_POST['ids'],
+            'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
+            'part' => $_POST['part'],
+            'cost' => IndexView::customRound($_POST['cost']),
+        ];
+        if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
+            $errors[] = 'Minden mező kitöltése kötelező.';
         }
-
-        // Javítási költség szerkesztése
-        if (KecsoRequest::EditCarCost()) 
-        {
-            $costId = $_POST['costId'];
-            $carCost = [
-                'date' => new \MongoDB\BSON\UTCDateTime(strtotime($_POST['date']) * 1000),
-                'part' => $_POST['part'],
-                'price' => floatval($_POST['price'])
-            ];
-
-            $result = CarsModel::UpdateCarCost($costId, $carCost);
-
-            if ($result) 
-            {
-                header("Location: " . Config::KECSO_URL_CARCOST . "?param=" . $carId);
-                exit();
-            } 
-            else 
-            {
-                $view .= '<p>Hiba történt a költség frissítése során.</p>';
-            }
+        if (!is_numeric($carcost['cost']) || $carcost['cost'] < 0) {
+            $errors[] = 'A költség nem lehet negatív szám.';
         }
-
-        // Javítási költség törlése
-        if (KecsoRequest::DeleteCarCost()) 
-        {
-            $costId = $_POST['deleteCostId'];
-            $result = CarsModel::DeleteCarCost($costId);
-
-            if ($result) 
-            {
-                header("Location: " . Config::KECSO_URL_CARCOST . "?param=" . $carId);
-                exit();
-            } 
-            else 
-            {
-                $view .= '<p>Hiba történt a költség törlése során.</p>';
-            }
+    
+        if (empty($errors)) {
+            CarsModel::InsertCarCost($carcost);
+            $_SESSION['success'] = 'A javítás költsége sikeresen hozzáadva.';
+            header("Location: " . Config::HALAS_URL_CARCOST);
+            exit();
+        } else {
+            $_SESSION['errors'] = $errors;
+            header("Location: " . Config::HALAS_URL_CARCOST);
+            exit();
         }
     }
 
+    // Autó költség törlése
+    if (isset($_POST['deleteCarcost'])) {
+        $carcostId = $_POST['deleteCarcostId'];
+        CarsModel::DeleteCarCost($carcostId);
+        $_SESSION['success'] = 'A javítás költsége sikeresen törölve.';
+        header("Location: " . Config::HALAS_URL_CARCOST);
+        exit();
+    }
+
+    // Autó költség szerkesztése 
+    $editcarcost = null;
+    if (isset($_POST['updateCarcost'])) {
+        $editcarcost = CarsModel::GetCarCostById($_POST['updateCarCostId']);
+    }
+
+    // Autó költség szerkesztésének mentése
+    if (isset($_POST['saveCarCost'])) {
+        $carcost = [
+            'ids' => $_POST['ids'],
+            'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
+            'part' => $_POST['part'],
+            'cost' => IndexView::customRound($_POST['cost']),
+        ];
+    
+       
+        if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
+            $errors[] = 'Minden mező kitöltése kötelező.';
+        }
+    
+        // Költség validáció: nem lehet negatív, és 0 is elfogadott
+        if (!is_numeric($carcost['cost']) || $carcost['cost'] < 0) {
+            $errors[] = 'A költség nem lehet negatív szám.';
+        }
+    
+        if (empty($errors)) {
+            CarsModel::UpdateCarCost($_POST['editCarCostId'], $carcost);
+            $_SESSION['success'] = 'A javítás költsége sikeresen frissítve.';
+            header("Location: " . Config::HALAS_URL_CARCOST);
+            exit();
+        } else {
+            $_SESSION['errors'] = $errors;
+            header("Location: " . Config::HALAS_URL_CARCOST);
+            exit();
+        }
+    }
+
+    // Megjelenítés: sikeres üzenetek, hibaüzenetek kezelése
+    if (isset($_SESSION['success'])) {
+        $view .= '<div class="success-message">' . $_SESSION['success'] . '</div>';
+        unset($_SESSION['success']);
+    }
+
+    if (isset($_SESSION['errors']) && !empty($_SESSION['errors'])) {
+        foreach ($_SESSION['errors'] as $error) {
+            $view .= '<div class="error-message">' . $error . '</div>';
+        }
+        unset($_SESSION['errors']);
+    }
+
+    // Autó költségek lekérése és megjelenítése
+    $carcost = CarsModel::GetCarCost();
+    $view .= HalasCarView::ShowCostByGroup($cars, $startDate, $endDate);
+    $view .= HalasCarView::CarCost($carcost, $editcarcost);
     $view .= IndexView::End();
+
     return $view;
 }
 public function couriorData3($param): string
 {
     $view = IndexView::Begin();
-    $view .= IndexView::OpenSection('Futár adatai');
-    $view .= CouriorsModel::Init();
+    session_start();
+     
+    // Sikeres üzenetek megjelenítéseű
+    if (isset($_SESSION['error_message'])) {
+        $html .= '<div class="error-message">' . $_SESSION['error_message'] . '</div>';
+        unset($_SESSION['error_message']);
+    }
+    
+    if (isset($_SESSION['success_message'])) {
+        $view .= '<p class="success-message">' . $_SESSION['success_message'] . '</p>';
+        unset($_SESSION['success_message']);
+    }
 
-    $editCourior = null;
-    $error='';
-    $id=$_REQUEST['param'] ?? '100';
     
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Futár szerkesztése    
-        if (KecsoRequest::CouriorUpdate()) {
-            $editCouriorId = $_POST['updateCouriorId'] ?? null;
-            if ($editCouriorId) {
-                $editCourior = CouriorsModel::GetCouriorDataById($editCouriorId);
-            }
-        }
-
-    // Futár mentése
-        if (KecsoRequest::CouriorSave()) {
-            $editCouriorId = $_POST['editCouriorId'] ?? null;
-            $name = $_POST['name'] ?? '';
-            $date = $_POST['date'] ?? '';
-            $dateaddress = $_POST['dateaddress'] ?? '';
-            $age = $_POST['age'] ?? '';
-            $address = $_POST['address'] ?? '';
-            $mothername = $_POST['mothername'] ?? '';
-    // Ellenőrzés, hogy minden mező ki legyen töltve
-            if (!empty($editCouriorId) && !empty($name) && !empty($date) && !empty($dateaddress) && !empty($age) && !empty($address) && !empty($mothername)) 
-            {
-                CouriorsModel::UpdateCouriordata($editCouriorId, [
-                    'name' => $name,
-                    'date' => $date,
-                    'dateaddress' => $dateaddress,
-                    'age' => $age,
-                    'address' => $address,
-                    'mothername' => $mothername
-                ]);
-            
-                $editCourior = null;
-                header("Location: " . Config::KECSO_URL_COURIORDATA);
-                exit();
-            }
-            
-        }
+    // Hibaüzenetek kezelése
+    $error = '';
 
     // Új futár hozzáadása  
-        if (KecsoRequest::CouriorsInsert()) {
-            $name = $_POST['name'] ?? '';
-            $date = $_POST['date'] ?? '';
-            $dateaddress = $_POST['dateaddress'] ?? '';
-            $age = $_POST['age'] ?? '';
-            $address = $_POST['address'] ?? '';
-            $mothername = $_POST['mothername'] ?? '';
-    // Ellenőrzés, hogy minden mező ki legyen töltve
-            if (!empty($name) && !empty($date) && !empty($dateaddress) && !empty($age) && !empty($address) && !empty($mothername)) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && KecsoRequest::CouriorsInsert()) {
+        $ids = $_POST['ids'] ?? '';
+        $name = $_POST['name'] ?? '';
+        $date = $_POST['date'] ?? '';
+        $dateaddress = $_POST['dateaddress'] ?? '';
+        $age = $_POST['age'] ?? '';
+        $address = $_POST['address'] ?? '';
+        $mothername = $_POST['mothername'] ?? '';
+
+        // Ellenőrizzük, hogy minden mező ki legyen töltve
+        if (empty($ids) || empty($name) || empty($date) || empty($dateaddress) || empty($age) || empty($address) || empty($mothername)) {
+            $error = '<p class="error-message">Minden mező kitöltése kötelező!</p>';
+        } elseif (!ctype_digit($ids)) {
+            $error = '<p class="error-message">Az azonosító mező csak számot tartalmazhat!</p>';
+        }
+
+        if (empty($error)) {
+            try {
                 CouriorsModel::InsertCouriordata([
+                    'ids' => (int)$ids,
                     'name' => $name,
                     'date' => $date,
                     'dateaddress' => $dateaddress,
@@ -279,202 +352,487 @@ public function couriorData3($param): string
                     'address' => $address,
                     'mothername' => $mothername
                 ]);
- 
-                header("Location: " . $_SERVER['REQUEST_URI']);
-                exit();
-            } 
-           
-        }
 
-    // Futár törlése  
-        if (KecsoRequest::CouriorDelete()) {
-            $deleteCouriorId = $_POST['deleteCouriorId'] ?? null;
-            if ($deleteCouriorId) 
-            {
-    // Futár törlése az adatbázisból
-                CouriorsModel::DeleteCouriordata($deleteCouriorId);
-                header("Location: " . $_SERVER['REQUEST_URI']);
+                $_SESSION['success_message'] = 'A futár adatai sikeresen hozzáadva.';
+                header("Location: " . Config::HALAS_URL_COURIORDATA);
                 exit();
+            } catch (Exception $e) {
+                $error = '<p class="error-message">' . $e->getMessage() . '</p>';
             }
         }
     }
+
+    // Egyéb POST kérések kezelése
+
+    // Futár törlése  
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && KecsoRequest::CouriorDelete()) {
+        $deleteCouriorId = $_POST['deleteCouriorId'] ?? null;
+        if ($deleteCouriorId) {
+            CouriorsModel::DeleteCouriordata($deleteCouriorId);
+            $_SESSION['success_message'] = 'A futár adatai sikeresen törölve.';
+            header("Location: " . Config::HALAS_URL_COURIORDATA);
+            exit();
+        }
+    }
+
+    // Futár szerkesztése
+    $editCourior = null;
+    $id = $_REQUEST['param'] ?? '';
+    if ($id && $_SERVER['REQUEST_METHOD'] === 'POST' && KecsoRequest::CouriorUpdate()) {
+        $editCouriorId = $_POST['updateCouriorId'] ?? null;
+        if ($editCouriorId) {
+            $editCourior = CouriorsModel::GetCouriorDataById($editCouriorId);
+        }
+    }
+
+    // Futár mentése
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && KecsoRequest::CouriorSave()) {
+        $editCouriorId = $_POST['editCouriorId'] ?? null;
+        $ids = (int)$_POST['ids'] ?? '';
+        $name = $_POST['name'] ?? '';
+        $date = $_POST['date'] ?? '';
+        $dateaddress = $_POST['dateaddress'] ?? '';
+        $age = $_POST['age'] ?? '';
+        $address = $_POST['address'] ?? '';
+        $mothername = $_POST['mothername'] ?? '';
+
+       
+        if (empty($ids) || empty($name) || empty($date) || empty($dateaddress) || empty($age) || empty($address) || empty($mothername)) {
+            $error = '<p class="error-message">Minden mező kitöltése kötelező!</p>';
+        } elseif (!ctype_digit((string)$ids)) {
+            $error = '<p class="error-message">Az azonosító mező csak számot tartalmazhat!</p>';
+        }
+
+        if (empty($error)) {
+            try {
+                CouriorsModel::UpdateCouriordata($editCouriorId, [
+                    'ids' => (int)$ids,
+                    'name' => $name,
+                    'date' => $date,
+                    'dateaddress' => $dateaddress,
+                    'age' => $age,
+                    'address' => $address,
+                    'mothername' => $mothername
+                ]);
+
+                $_SESSION['success_message'] = 'A futáradatai sikeresen frissítve.';
+                header("Location: " . Config::HALAS_URL_COURIORDATA);
+                exit();
+            } catch (Exception $e) {
+                $error = '<p class="error-message">' . $e->getMessage() . '</p>';
+            }
+        }
+    }
+
     // Futárok adatainak lekérése az adatbázisból
-    
-    $couriorData = CouriorsModel::GetCouriorDataById($id);
-    $view .= KecsoCouriorView::CouriorData($couriorData, $editCourior);
+    $couriorData = CouriorsModel::GetCouriorData();
+   
+    // Futárok megjelenítése
+    $view .= IndexView::OpenSection('Futár adatai');
+    $view .= HalasCouriorView::CouriorData($couriorData, $editCourior, $id);
     $view .= IndexView::CloseSection();
-    $view .= IndexView::End();
-    
-    if (isset($error) && !empty($error)) {
+
+    // Hibaüzenet megjelenítése
+    if (!empty($error)) {
         $view .= $error;
     }
-    
-    return $view;
-}
 
-public function courioraddress3($param): string
-{
-    // Futár cím kezelése itt
-    /*úgy mint a dispet majd a hónap lesz group szempont csak a sorok száma(napok száma),név,időpont hónap,nap össz cím amivel kiment,leadott cím,véglegvissza,élővissza*/
-    
-    $view = IndexView::Begin();
-    $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
-
-    // Futár cím kezelése
-    if (KecsoRequest::AddressInsert()) {
-        $address = [
-            'day' => $_POST['day'],
-            'month' => $_POST['month'],
-            'time' => $_POST['time'],
-            'total_addresses' => $_POST['total_addresses'],
-            'delivered_addresses' => $_POST['delivered_addresses'],
-            'final_return' => $_POST['final_return'],
-            'live_return' => $_POST['live_return']
-        ];
-        CouriorsModel::InsertAddress($address);
-        header("Location: " . $_SERVER['REQUEST_URI']);
-        exit();
-    }
-
-    if (KecsoRequest::AddressDelete()) {
-        $addressId = $_POST['deleteAddressId'];
-        CouriorsModel::DeleteAddress($addressId);
-        header("Location: " . $_SERVER['REQUEST_URI']);
-        exit();
-    }
-
-    if (KecsoRequest::AddressUpdate()) {
-        $editaddress = CouriorsModel::GetAddressById($_POST['updateAddressId']);
-    }
-
-    if (KecsoRequest::AddressSave()) {
-            $address = [
-                'day' => $_POST['day'],
-                'month' => $_POST['month'],
-                'time' => $_POST['time'],
-                'total_addresses' => $_POST['total_addresses'],
-                'delivered_addresses' => $_POST['delivered_addresses'],
-                'final_return' => $_POST['final_return'],
-                'live_return' => $_POST['live_return']
-            ];
-        CouriorsModel::UpdateAddress($_POST['editAddressId'], $address);
-        header("Location: " . $_SERVER['REQUEST_URI']);
-        exit();
-    }
-
-    $addresses = CouriorsModel::GetAddresses();
-    $view .= KecsoCouriorView::CouriorsAddress($addresses, $editaddress ?? null);
     $view .= IndexView::End();
 
     return $view;
 }
+public function courioraddress3($param): string
+{
+    // Oldal kezdete és session kezelése
+    $view = IndexView::Begin();
+    session_start();
 
-public static function depo3($param):string
+    // Sikeres és hibaüzenetek kezelése
+    if (isset($_SESSION['success_message'])) {
+        $view .= '<div class="success-message">' . $_SESSION['success_message'] . '</div>';
+        unset($_SESSION['success_message']);
+    }
+
+    if (isset($_SESSION['error_message'])) {
+        $view .= '<div class="error-message">' . $_SESSION['error_message'] . '</div>';
+        unset($_SESSION['error_message']);
+    }
+
+    // Alapértelmezett dátumok beállítása
+    $startDate = date('Y-m-01');
+    $endDate = date('Y-m-t');
+
+    // Dátum szűrés POST alapján
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
+        if (isset($_POST['startDate']) && strtotime($_POST['startDate']) !== false) {
+            $startDate = date('Y-m-d', strtotime($_POST['startDate']));
+        } else {
+            $startDate = date('Y-m-d');
+        }
+        if (isset($_POST['endDate']) && strtotime($_POST['endDate']) !== false) {
+            $endDate = date('Y-m-d', strtotime($_POST['endDate']));
+        } else {
+            $endDate = date('Y-m-d');
+        }
+    }
+
+    
+    $deliveries = CouriorsModel::SumDeliveredAddressesByDateAndGroup($startDate, $endDate);
+    var_dump($deliveries);
+
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newAddress'])) {
+       
+        if (!ctype_digit($_POST['ids'])) {
+            $_SESSION['error_message'] = 'Az azonosító mező csak számot tartalmazhat.';
+            header("Location: " . Config::HALAS_URL_COURIORADDRESS);
+            exit();
+        }
+
+        
+        $requiredFields = ['name', 'ids', 'day', 'month', 'time', 'total_addresses', 'delivered_addresses'];
+        $error = '';
+
+        foreach ($requiredFields as $field) {
+            if (empty($_POST[$field])) {
+                $error = '<p class="error-message">Minden mező kitöltése kötelező!</p>';
+                break;
+            }
+        }
+
+        if (empty($error)) {
+            try {
+               
+                $address = [
+                    'name' => $_POST['name'],
+                    'ids' => (int)$_POST['ids'],
+                    'day' => (int)$_POST['day'],
+                    'month' => $_POST['month'],
+                    'time' => date('Y-m-d H:i:s', strtotime($_POST['time'])),
+                    'total_addresses' => (int)$_POST['total_addresses'],
+                    'delivered_addresses' => (int)$_POST['delivered_addresses'],
+                    'final_return' => isset($_POST['final_return']) ? (int)$_POST['final_return'] : 0,
+                    'live_return' => isset($_POST['live_return']) ? (int)$_POST['live_return'] : 0
+                ];
+                // Cím hozzáadása
+                CouriorsModel::InsertAddress($address);
+                $_SESSION['success_message'] = 'Új címadat sikeresen hozzáadva.';
+                header("Location: " . Config::HALAS_URL_COURIORADDRESS);
+                exit();
+            } catch (Exception $e) {
+                $_SESSION['error_message'] = 'Hiba történt a cím hozzáadása során: ' . $e->getMessage();
+                header("Location: " . Config::HALAS_URL_COURIORADDRESS);
+                exit();
+            }
+        } else {
+            $_SESSION['error_message'] = $error;
+            header("Location: " . Config::HALAS_URL_COURIORADDRESS);
+            exit();
+        }
+    }
+
+    // Egyéb POST kérések kezelése (törlés, szerkesztés, mentés)
+
+    // Futár törlése
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteAddressId'])) {
+        $addressId = $_POST['deleteAddressId'];
+        try {
+            CouriorsModel::DeleteAddress($addressId);
+            $_SESSION['success_message'] = 'Címadat sikeresen törölve.';
+            header("Location: " . Config::HALAS_URL_COURIORADDRESS);
+            exit();
+        } catch (Exception $e) {
+            $_SESSION['error_message'] = 'Hiba történt a cím törlése során: ' . $e->getMessage();
+            header("Location: " . Config::HALAS_URL_COURIORADDRESS);
+            exit();
+        }
+    }
+
+    // Futár szerkesztése
+    $editaddress = null;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['updateAddressId'])) {
+        $editaddress = CouriorsModel::GetAddressById($_POST['updateAddressId']);
+        if ($editaddress) {
+            $editaddress['time'] = date('Y-m-d\TH:i', strtotime($editaddress['time']));
+        }
+    }
+
+    // Futár mentése
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['editAddressId'])) {
+        $editAddressId = $_POST['editAddressId'];
+        // Szükséges adatok ellenőrzése
+        $requiredFields = ['name', 'ids', 'day', 'month', 'time', 'total_addresses', 'delivered_addresses'];
+        $error = '';
+
+        foreach ($requiredFields as $field) {
+            if (empty($_POST[$field])) {
+                $error = '<p class="error-message">Minden mező kitöltése kötelező!</p>';
+                break;
+            }
+        }
+
+        if (empty($error)) {
+            try {
+                // Adatok frissítése az adatbázisban
+                $address = [
+                    'name' => $_POST['name'],
+                    'ids' => (int)$_POST['ids'],
+                    'day' => (int)$_POST['day'],
+                    'month' => $_POST['month'],
+                    'time' => date('Y-m-d H:i:s', strtotime($_POST['time'])),
+                    'total_addresses' => (int)$_POST['total_addresses'],
+                    'delivered_addresses' => (int)$_POST['delivered_addresses'],
+                    'final_return' => isset($_POST['final_return']) ? (int)$_POST['final_return'] : 0,
+                    'live_return' => isset($_POST['live_return']) ? (int)$_POST['live_return'] : 0
+                ];
+
+                CouriorsModel::UpdateAddress($editAddressId, $address);
+                $_SESSION['success_message'] = 'Cím sikeresen frissítve.';
+                header("Location: " . Config::HALAS_URL_COURIORADDRESS);
+                exit();
+            } catch (Exception $e) {
+                $_SESSION['error_message'] = 'Hiba történt a cím frissítése során: ' . $e->getMessage();
+                header("Location: " . Config::HALAS_URL_COURIORADDRESS);
+                exit();
+            }
+        } else {
+            $_SESSION['error_message'] = $error;
+            header("Location: " . Config::HALAS_URL_COURIORADDRESS);
+            exit();
+        }
+    }
+
+    // Futárcímek lekérése az adatbázisból
+    $addresses = CouriorsModel::GetAddresses();
+
+    // Megjelenítés összeállítása
+    $view .= HalasCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate);
+    
+    $view .= HalasCouriorView::CouriorsAddress($addresses, $editaddress);
+    $view .= IndexView::End();
+
+    return $view;
+}
+public static function depo3($param): string
 {
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Depó adatai');
-  
-    $editDepo=null;
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') 
-    {
-        // Depó szerkesztése
-        if (HalasRequest::DepoUpdate()) 
-        {
-            $editDepoId = $_POST['updateDepoId'];
-            $editDepo = DeposModel::GetDepoById($editDepoId);
+    
+    $editDepo = null;
+    $errorMessages = []; // Hibaüzenetek tárolására
+    
+    // Session kezelés inicializálása
+    session_start();
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Depó szerkesztése előkészítése
+        if (KecsoRequest::DepoUpdate()) {
+            $editDepoId = $_POST['updateDepoId'] ?? null;
+            if (!empty($editDepoId)) {
+                $editDepo = DeposModel::GetDepoById($editDepoId);
+            }
         }
-       if (HalasRequest::DepoSave()) 
-        {
-            $editDepoId = $_POST['editDepoId'];
+    
+        // Depó mentése
+        if (KecsoRequest::DepoSave()) {
+            $editDepoId = $_POST['editDepoId'] ?? null;
             $title = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
-            if (!empty($editDepoId) && !empty($title) && !empty($content)) 
-            {
+            if (empty($editDepoId) || empty($title) || empty($content)) {
+                $_SESSION['error_message'] = 'Minden mező kitöltése kötelező!';
+            } else {
                 DeposModel::UpdateDepodata($editDepoId, ['title' => $title, 'content' => $content]);
-                // Mentés után ne legyen szerkesztési állapotban
-                $editDepo = null;
-                header("Location: " . Config::HALAS_URL_DEPO);
+                $_SESSION['success_message'] = 'Az adat sikeresen frissítve.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
             }
         }
-        // Új depó adat hozzáadása
-        if (HalasRequest::DepoInsert()) 
-        {
+    
+        // Új depó hozzáadása
+        if (KecsoRequest::DepoInsert()) {
             $title = $_POST['title'] ?? '';
             $content = $_POST['content'] ?? '';
-            if (!empty($title) && !empty($content)) 
-            {
+            if (empty($title) || empty($content)) {
+                $_SESSION['error_message'] = 'Minden mező kitöltése kötelező!';
+            } else {
                 DeposModel::InsertDepodata(['title' => $title, 'content' => $content]);
-                header("Location: " . Config::HALAS_URL_DEPO);
+                $_SESSION['success_message'] = 'A depóadat sikeresen hozzáadva.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
                 exit();
             }
         }
-        // Depó adat törlése
-        if (HalasRequest::DepoDelete()) 
-        {
-            $deleteDepoId = $_POST['deleteDepoId'];
-            DeposModel::DeleteDepodata($deleteDepoId);
+    
+        // Depó törlése
+        if (KecsoRequest::DepoDelete()) {
+            $deleteDepoId = $_POST['deleteDepoId'] ?? null;
+            if (!empty($deleteDepoId)) {
+                DeposModel::DeleteDepodata($deleteDepoId);
+                $_SESSION['success_message'] = 'Az adat sikeresen törölve.';
+                header("Location: " . $_SERVER['REQUEST_URI']);
+                exit();
+            }
         }
     }
+    
+    // Megjelenítjük a hibaüzenetet, ha van
+    if (isset($_SESSION['error_message'])) {
+        $view .= '<div>';
+        $view .= '<p>' . htmlspecialchars($_SESSION['error_message']) . '</p>';
+        $view .= '</div>';
+        unset($_SESSION['error_message']);
+    }
+    
+    // Megjelenítjük a sikeres üzenetet, ha van
+    if (isset($_SESSION['success_message'])) {
+        $view .= '<div>';
+        $view .= '<p>' . htmlspecialchars($_SESSION['success_message']) . '</p>';
+        $view .= '</div>';
+        unset($_SESSION['success_message']);
+    }
+    
     $depodata = DeposModel::GetDepoData();
-    $view .= HalasDepoView::Depo($depodata,$editDepo);
+    $view .= HalasDepoView::Depo($depodata, $editDepo);
     $view .= IndexView::CloseSection();
     return $view;
-}  
-  public static function disp3($param):string
-{
+    
+}
+public function disp3($param): string
+{   
+    session_start();
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Diszpécserek elérhetőségei');
     $dispdata = DispModel::GetDispdata(); 
     $editdisp = null; 
 
+    // Hibaüzenetek tömbje
+    $errors = [];
+
+    // Sikeres üzenetek tömbje
+    $successMessages = [];
+
+    // Űrlap beküldésének és validációinak kezelése
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (HalasRequest::DispInsert()) {
+        // Új diszpécser hozzáadása
+        if (isset($_POST['newDisp'])) {
             $name = $_POST['name'] ?? '';
             $title = $_POST['title'] ?? '';
             $phone = $_POST['phone'] ?? '';
-            if (!empty($name) && !empty($title) && !empty($phone)) {
-                DispModel::InsertDispdata(['name' => $name, 'title' => $title, 'phone' => $phone]);
-                header("Location: " . Config::HALAS_URL_DISP);
-                exit();
+
+            // Alap validáció: üres mezők ellenőrzése
+            if (empty($name) || empty($title) || empty($phone)) {
+                $errors[] = 'Minden mező kitöltése kötelező.';
+            } else {
+                // Specifikus validáció: név és munkaterület mező betű formátum ellenőrzése
+                if (!self::isValidNameFormat($name)) {
+                    $errors[] = 'A Név mező csak betűket és megengedett egyéb karaktereket tartalmazhat.';
+                }
+                if (!self::isValidTitleFormat($title)) {
+                    $errors[] = 'A Munkaterület mező csak betűket és megengedett egyéb karaktereket tartalmazhat.';
+                }
+
+                // Telefonszám validáció
+                if (!empty($phone) && !self::isValidPhoneFormat($phone)) {
+                    $errors[] = 'A Telefonszám formátuma nem megfelelő.';
+                }
+
+                if (empty($errors)) {
+                    DispModel::InsertDispdata(['name' => $name, 'title' => $title, 'phone' => $phone]);
+                    $_SESSION['success'] = 'A diszpécser sikeresen hozzáadva.';
+                    header("Location: " . Config::HALAS_URL_DISP);
+                    exit();
+                }
             }
-            
         }
 
-        if (HalasRequest::DispSave()) {
-            $editDispId = $_POST['editDispId'];
-            $name = $_POST['name'] ?? '';
-            $title = $_POST['title'] ?? '';
-            $phone = $_POST['phone'] ?? '';
-            if (!empty($editDispId) && !empty($name) && !empty($title) && !empty($phone)) {
-                DispModel::UpdateDispdata($editDispId, ['name' => $name, 'title' => $title, 'phone' => $phone]);
-                header("Location: " . Config::HALAS_URL_DISP);
-                exit();
-            }
-        }
-
-        if (HalasRequest::DispDelete()) {
+        // Törlés
+        if (isset($_POST['deleteDisp'])) {
             $deleteDispId = $_POST['deleteDispId'];
             DispModel::DeleteDispdata($deleteDispId);
+            $_SESSION['success'] = 'A diszpécser sikeresen törölve.';
             header("Location: " . Config::HALAS_URL_DISP);
             exit();
         }
 
-        if (HalasRequest::DispUpdate()) {
+        // Frissítés előkészítése
+        if (isset($_POST['updateDisp'])) {
             $editDispId = $_POST['updateDispId'] ?? '';
             
             if (!empty($editDispId)) {
-                
                 $editdisp = DispModel::GetDispById($editDispId);
+            }
+        }
+
+        // Frissítés mentése
+        if (isset($_POST['saveDisp'])) {
+            $editDispId = $_POST['editDispId'] ?? '';
+            $name = $_POST['name'] ?? '';
+            $title = $_POST['title'] ?? '';
+            $phone = $_POST['phone'] ?? '';
+
+            // Alap validáció: üres mezők ellenőrzése
+            if (empty($name) || empty($title) || empty($phone)) {
+                $errors[] = 'Minden mező kitöltése kötelező.';
+            } else {
+                // Specifikus validáció: név és munkaterület mező betű formátum ellenőrzése
+                if (!self::isValidNameFormat($name)) {
+                    $errors[] = 'A Név mező csak betűket és megengedett egyéb karaktereket tartalmazhat.';
+                }
+                if (!self::isValidTitleFormat($title)) {
+                    $errors[] = 'A Munkaterület mező csak betűket és megengedett egyéb karaktereket tartalmazhat.';
+                }
+
+                // Telefonszám validáció
+                if (!empty($phone) && !self::isValidPhoneFormat($phone)) {
+                    $errors[] = 'A Telefonszám formátuma nem megfelelő.';
+                }
+
+                if (empty($errors)) {
+                    DispModel::UpdateDispdata($editDispId, ['name' => $name, 'title' => $title, 'phone' => $phone]);
+                    $_SESSION['success'] = 'A diszpécser adatai sikeresen frissítve.';
+                    header("Location: " . Config::HALAS_URL_DISP);
+                    exit();
+                }
             }
         }
     }
 
-    $view .= HalasDispView::Disp($dispdata,$editdisp);
+    // Sikerüzenet megjelenítése
+    if (isset($_SESSION['success'])) {
+        $view .= '<div class="success-message">' . $_SESSION['success'] . '</div>';
+        unset($_SESSION['success']);
+    }
+
+    // Hibák megjelenítése
+    if (!empty($errors)) {
+        foreach ($errors as $error) {
+            $view .= '<div class="error-message">' . $error . '</div>';
+        }
+    }
+
+    $view .= HalasDispView::Disp($dispdata, $editdisp);
     $view .= IndexView::CloseSection();
+    $view .= IndexView::End();
+
     return $view;
-} 
+}
+private static function isValidPhoneFormat($phone)
+{
+    // Elfogadott karakterek: számok, szóköz, +, és a következő speciális karakterek: ()/-.
+    return preg_match('/^(06)(((20|30|70)[0-9]{7})|((?!(30|20|70))[0-9]{8,9}))$/', $phone) || preg_match('/^(\+?[\d\s-]+)$/', $phone);
+}
+
+private static function isValidNameFormat($name) 
+{
+    // Elfogadott karakterek: betűk, szóköz, és a következő speciális karakterek: .,-
+    return preg_match('/^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű\s.,-]+$/', $name);
+}
+
+private static function isValidTitleFormat($title) 
+{
+    // Elfogadott karakterek: betűk, szóköz, és a következő speciális karakterek: .,-
+    return preg_match('/^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű\s.,-]+$/', $title);
+}
+
 }
 
     

@@ -165,8 +165,10 @@ private static function DisplayCouriors()
         $html .= '</tbody></table>';
         
         if (isset($courior)) {
+            $html .= '<div class="buttonss">';
             $html .= '<a href="' . Config::KECSO_URL_COURIORDATA  .'">Személyes adatok</a>
-                      <a href="' . Config::KECSO_URL_COURIORADDRESS .'">Hónapos szétbontás</a>';
+                      <a href="' . Config::KECSO_URL_COURIORADDRESS .'">Havi lebontás</a>';
+            $html .= '</div>';
         }
     } else {
         $html .= '<tr><td>Nincsenek elérhető futárok</td></tr>';
@@ -245,7 +247,7 @@ private static function DisplayCouriors()
                         <tr>
                             <th>Név</th>
                             <th>Futár Azonosító</th>
-                            <th>Ledolgozott nap</th>
+                            <th>Ledolgozott napok</th>
                             <th>Hónap</th>
                             <th>Pontos időpont</th>
                             <th>Össz cím</th>
@@ -269,6 +271,7 @@ private static function DisplayCouriors()
                         <td>' . htmlspecialchars($item['final_return'] ?? '') . '</td>
                         <td>' . htmlspecialchars($item['live_return'] ?? '') . '</td>
                         <td>
+                        <div class="address">
                             <form method="post" action="' . Config::KECSO_URL_COURIORADDRESS . '?operation=courioraddress&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
                              <input type="hidden" name="updateAddressId" value="' . ($item['_id'] ?? '') . '">
                              <button type="submit" name="updateAddress">Szerkesztés</button>
@@ -279,6 +282,7 @@ private static function DisplayCouriors()
                                 <input type="hidden" name="param" value="' . ($item['_id'] ?? '') . '">
                                 <button type="submit" name="deleteAddress">Törlés</button>
                             </form>
+                        <div>
                         </td>
                     </tr>';
     
