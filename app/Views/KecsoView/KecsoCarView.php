@@ -252,10 +252,10 @@ private static function ListUploadedImages($carId)
     
         return $html;
     }
-    /*public static function ShowConfirmDeleteScript()
+    public static function ShowConfirmDeleteScript()
    {
-    return '<script src="public/src/confirmDelete.js"></script>';
-   }*/
+    return '<script src="app/public/src/confirmDelete.js"></script>';
+   }
     public static function CreateCarCostForm()
     {
         $html = '<form method="post" action="' . Config::KECSO_URL_CARCOST . '">';

@@ -300,7 +300,7 @@ public function kecso(): string
         $carcost = CarsModel::GetCarCost();
         $view .= KecsoCarView::ShowCostByGroup($cars, $startDate, $endDate);
         $view .= KecsoCarView::CarCost($carcost, $editcarcost);
-        //$view .= KecsoCarView::ShowConfirmDeleteScript(); 
+        $view .= KecsoCarView::ShowConfirmDeleteScript(); 
         $view .= IndexView::End();
 
         return $view;
