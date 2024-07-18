@@ -1,13 +1,13 @@
-Az EXO. depós projekt célja a kecskeméti,kiskunhalasi,nyergesújfalui,tatabányai depók működésének kezelése, különös tekintettel a gépjármű- és futárkezelésre ezenfelül egy depó adat aloldal és egy diszpécseres aloldal is van(átalános adat gyűlytésre). Az projekt lehetőséget biztosít gépjárművek,futárok,depó adatok,diszpécser adatok hozzáadására, frissítésére, törlésére, valamint a (költségek és futárcímadatok bizonyos időn belüli) nyomon követésére.
+Az EXO. depós projekt célja a kecskeméti, kiskunhalasi, nyergesújfalui és tatabányai depók működésének kezelése, különös tekintettel a gépjárművek és futárok adatainak kezelésére. Ezenfelül depó adat aloldal és diszpécseres aloldal is rendelkezésre áll (átalános adatgyűjtésre). A projekt lehetőséget biztosít gépjárművek, futárok, depó adatok, valamint diszpécser adatok hozzáadására, frissítésére, törlésére, illetve a (költségek és futárcímadatok bizonyos időn belüli) nyomon követésére.
 
 ## Funkciók
 
 - **Gépjárműkezelés**: Járművek hozzáadása, frissítése, törlése és megjelenítése.
-- **Futárkezelés**: Futárok adatok hozzáadása, frissítése, törlése és megjelenítése.
-- **Költségkezelés**: A járművek fenntartási költségeinek nyomon követése.
-- **Futárcím kezelés**: Kézbesített szállításaok hozzáadása, nyomon követése.
-- **Depóadatok kezelés**:Depóadatok hozzáadása, frissítése, törlése és megjelenítése.
-- **Diszpécser adatok kezelés**:Diszpécser adatok hozzáadása, frissítése, törlése és megjelenítése.
+- **Futárkezelés**: Futárok adatainak hozzáadása, frissítése, törlése és megjelenítése.
+- **Költségkezelés**: A járművek fenntartási költségeinek bizonyos időn belüli nyomon követése.
+- **Kézbesített címek kezelése**: Kézbesített szállítások bizonyos időn belüli nyomon követése.
+- **Depó adatainak kezelése**:Depó adatainak hozzáadása, frissítése, törlése és megjelenítése.
+- **Diszpécser adatok kezelés**:Diszpécser adatainak hozzáadása, frissítése, törlése és megjelenítése.
 
 ## Telepítés
 
