@@ -19,7 +19,7 @@ Az EXO. depós projekt célja a kecskeméti, kiskunhalasi, nyergesújfalui és t
  ```
 2. Telepítsd a szükséges függőségeket:
     ```sh
-    npm install
+    composer install
     ```
 
 ## Használat

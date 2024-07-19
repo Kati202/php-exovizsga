@@ -23,34 +23,8 @@ class Kecso extends BaseController
   
 public function kecso(): string
     {
-        session_start();
+        
        
-
-        // Bejelentkezés kezelése
-        /*if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-            // MongoDB kapcsolat inicializálása
-            $databaseManager = new DatabaseManager();
-            $usersCollection = $databaseManager->connectToMongoDB()->users;
-
-            $username = $_POST['kecso'];
-            $password = $_POST['kecso12345'];
-
-            // Keresés a felhasználók között
-            $user = $usersCollection->findOne(['username' => $username, 'password' => $password]);
-
-            if ($user) {
-                $_SESSION['user_id'] = (string) $user['_id'];
-                $_SESSION['username'] = $user['username'];
-                header('Location: ' . Config::BASE_URL . 'kecso'); // Vagy a megfelelő oldal, ahova irányítani szeretnéd
-                exit();
-            } else {
-                // Sikertelen bejelentkezés
-                $_SESSION['error_message'] = 'Hibás felhasználónév vagy jelszó.';
-                header('Location: ' . Config::BASE_URL . 'login.php');
-                exit();
-            }
-        }*/
-
         // Oldal tartalmának összeállítása
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
@@ -156,6 +130,7 @@ public function kecso(): string
 
     public function cardata($param): string
     {
+        
         $carId = isset($param) ? $param : null;
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Gépjármű adatai');
@@ -186,40 +161,53 @@ public function kecso(): string
         return $view;
     }
 
- public function carcost($param): string {
-        session_start(); 
+    public function carcost($param): string {
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Kecskeméti depó gépjárműveinek költségei');
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
-            $startDate = $_POST['startDate'] ?? date('Y-m-01');
-            $endDate = $_POST['endDate'] ?? date('Y-m-t');
-        } else {
-            $startDate = date('Y-m-01');
-            $endDate = date('Y-m-t');
+    
+        $startDate = date('Y-m-01');
+        $endDate = date('Y-m-t');
+        
+        //Lehetséges hogy késöbb beleépítem de most nem érzem szükségét(igazából a courioraddresnél már van egy ilyen funkció)
+       /* if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
+            if (isset($_POST['startDate']) && strtotime($_POST['startDate']) !== false) {
+                $startDate = date('Y-m-d', strtotime($_POST['startDate']));
+            } else {
+                $startDate = date('Y-m-d');
+            }
+            if (isset($_POST['endDate']) && strtotime($_POST['endDate']) !== false) {
+                $endDate = date('Y-m-d', strtotime($_POST['endDate']));
+            } else {
+                $endDate = date('Y-m-d');
+            }
         }
-
-        // Autók költségeinek összesítése dátum és csoport szerint
+        
+        // Költségek összesítése
         $cars = CarsModel::SumCostByDateAndGroup($startDate, $endDate);
-
+        
+        // Költségek megjelenítése
+        $view .= KecsoCarView::ShowCostByGroup($cars, $startDate, $endDate);*/
+    
         $errors = [];
-
+    
         // Autó költség beszúrása
         if (isset($_POST['newCarCost'])) {
             $carcost = [
                 'ids' => $_POST['ids'],
                 'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
                 'part' => $_POST['part'],
-                'cost' => IndexView::customRound($_POST['cost']),
+                'cost' => (int)$_POST['cost'],
             ];
-            if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
+            
+            if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part']) || empty($carcost['cost'])) {
                 $errors[] = 'Minden mező kitöltése kötelező.';
             }
             if (!is_numeric($carcost['cost']) || $carcost['cost'] < 0) {
-                $errors[] = 'A költség nem lehet negatív szám.';
+                $errors[] = 'A költség nem lehet negatív szám vagy betű.';
             }
-        
+    
             if (empty($errors)) {
+                $carcost['cost'] = IndexView::customRound($carcost['cost']);
                 CarsModel::InsertCarCost($carcost);
                 $_SESSION['success'] = 'A javítás költsége sikeresen hozzáadva.';
                 header("Location: " . Config::KECSO_URL_CARCOST);
@@ -230,7 +218,7 @@ public function kecso(): string
                 exit();
             }
         }
-
+    
         // Autó költség törlése
         if (isset($_POST['deleteCarcost'])) {
             $carcostId = $_POST['deleteCarcostId'];
@@ -239,32 +227,32 @@ public function kecso(): string
             header("Location: " . Config::KECSO_URL_CARCOST);
             exit();
         }
-
+    
         // Autó költség szerkesztése 
         $editcarcost = null;
         if (isset($_POST['updateCarcost'])) {
             $editcarcost = CarsModel::GetCarCostById($_POST['updateCarCostId']);
         }
-
+    
         // Autó költség szerkesztésének mentése
         if (isset($_POST['saveCarCost'])) {
             $carcost = [
                 'ids' => $_POST['ids'],
                 'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
                 'part' => $_POST['part'],
-                'cost' => IndexView::customRound($_POST['cost']),
+                'cost' => (int)$_POST['cost'],
             ];
-        
+    
             if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
                 $errors[] = 'Minden mező kitöltése kötelező.';
             }
-        
-            // Költség validáció: nem lehet negatív, és 0 is elfogadott
+    
             if (!is_numeric($carcost['cost']) || $carcost['cost'] < 0) {
-                $errors[] = 'A költség nem lehet negatív szám.';
+                $errors[] = 'A költség nem lehet negatív szám vagy bet.';
             }
-        
+    
             if (empty($errors)) {
+                $carcost['cost'] = IndexView::customRound($carcost['cost']);
                 CarsModel::UpdateCarCost($_POST['editCarCostId'], $carcost);
                 $_SESSION['success'] = 'A javítás költsége sikeresen frissítve.';
                 header("Location: " . Config::KECSO_URL_CARCOST);
@@ -275,43 +263,42 @@ public function kecso(): string
                 exit();
             }
         }
-        if (isset($_POST['guaranteedDelete'])) {
+    
+       /* if (isset($_POST['guaranteedDelete'])) {
             $carcostId = $_POST['guaranteedDeleteId'];
             CarsModel::DeleteCarCost($carcostId);
             $_SESSION['success'] = 'A javítás költsége sikeresen törölve.';
             header("Location: " . Config::KECSO_URL_CARCOST);
             exit();
-        }
-
+        }*/
+    
         // Megjelenítés: sikeres üzenetek, hibaüzenetek kezelése
         if (isset($_SESSION['success'])) {
             $view .= '<div class="success-message">' . $_SESSION['success'] . '</div>';
             unset($_SESSION['success']);
         }
-
+    
         if (isset($_SESSION['errors']) && !empty($_SESSION['errors'])) {
             foreach ($_SESSION['errors'] as $error) {
                 $view .= '<div class="error-message">' . $error . '</div>';
             }
             unset($_SESSION['errors']);
         }
-
+    
         // Autó költségek lekérése és megjelenítése
         $carcost = CarsModel::GetCarCost();
-        $view .= KecsoCarView::ShowCostByGroup($cars, $startDate, $endDate);
         $view .= KecsoCarView::CarCost($carcost, $editcarcost);
-        $view .= KecsoCarView::ShowConfirmDeleteScript(); 
+        //$view .= KecsoCarView::ShowConfirmDeleteScript(); 
         $view .= IndexView::End();
-
+    
         return $view;
     }
     
 
-
 public function couriorData($param): string
 {
     $view = IndexView::Begin();
-    session_start();
+    
      
     // Sikeres üzenetek megjelenítéseű
     if (isset($_SESSION['error_message'])) {
@@ -448,11 +435,11 @@ public function couriorData($param): string
 }
 public function courioraddress($param): string
 {
-    // Oldal kezdete és session kezelése
+    
     $view = IndexView::Begin();
-    session_start();
+    $ids = 'deliveryIds';
 
-    // Sikeres és hibaüzenetek kezelése
+    
     if (isset($_SESSION['success_message'])) {
         $view .= '<div class="success-message">' . $_SESSION['success_message'] . '</div>';
         unset($_SESSION['success_message']);
@@ -463,11 +450,11 @@ public function courioraddress($param): string
         unset($_SESSION['error_message']);
     }
 
-    // Alapértelmezett dátumok beállítása
+    
     $startDate = date('Y-m-01');
     $endDate = date('Y-m-t');
 
-    // Dátum szűrés POST alapján
+    
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
         if (isset($_POST['startDate']) && strtotime($_POST['startDate']) !== false) {
             $startDate = date('Y-m-d', strtotime($_POST['startDate']));
@@ -480,10 +467,19 @@ public function courioraddress($param): string
             $endDate = date('Y-m-d');
         }
     }
+    $filterParams = [
+        'startDate' => $startDate,
+        'endDate' => $endDate,
+        'ids' => isset($_POST['ids']) ? $_POST['ids'] : []
+    ];
 
     
     $deliveries = CouriorsModel::SumDeliveredAddressesByDateAndGroup($startDate, $endDate);
-    var_dump($deliveries);
+
+    $view .= KecsoCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate, $ids);
+
+    
+    
 
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newAddress'])) {
@@ -610,10 +606,7 @@ public function courioraddress($param): string
     // Futárcímek lekérése az adatbázisból
     $addresses = CouriorsModel::GetAddresses();
 
-    // Megjelenítés összeállítása
-    $view .= KecsoCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate);
-    
-    $view .= KecsoCouriorView::CouriorsAddress($addresses, $editaddress ?? null);
+    $view .= KecsoCouriorView::CouriorsAddress($addresses, $editaddress);
     $view .= IndexView::End();
 
     return $view;
@@ -626,8 +619,7 @@ public static function depo($param): string
     $editDepo = null;
     $errorMessages = []; // Hibaüzenetek tárolására
     
-    // Session kezelés inicializálása
-    session_start();
+    
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Depó szerkesztése előkészítése
@@ -703,7 +695,7 @@ public static function depo($param): string
 }
 public function disp($param): string
 {   
-    session_start();
+   
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Diszpécserek elérhetőségei');
     $dispdata = DispModel::GetDispdata(); 

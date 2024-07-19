@@ -261,7 +261,7 @@ public static function SumDeliveredAddressesByDateAndGroup($startDate, $endDate)
         ];
 
         $result = $collection->aggregate($pipeline)->toArray();
-        var_dump($result);
+        return $result;
         
     }
     private static function CreateFilterById($id)

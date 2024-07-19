@@ -35,14 +35,14 @@ class IndexView
 	{
 		return '</section>';
 	}
-    public static function renderDeleteConfirmationForm($actionUrl, $ids)
+    /*public static function renderDeleteConfirmationForm($actionUrl, $ids)
     {
         return '<form method="post" action="' . $actionUrl . '">
          <input type="hidden" name="deleteCarId" value="' . $ids . '">
          <label>Biztosan törlöd?</label>
          <button type="submit" name="confirmDelete">Igen, törlöm</button>
          </form>';
-    }
+    }*/
     public static function CreateInput($text, $name, $placeholder = '')
    {
     if ($name === 'total_addresses' || $name === 'delivered_addresses' || $name === 'final_return' || $name === 'live_return') {
@@ -81,11 +81,6 @@ class IndexView
     }
     }
     
-    public static function Login()
-    {
-        return self::loadView('template/login');
-    }
-
     private static function loadView($viewPath)
     {
         ob_start();

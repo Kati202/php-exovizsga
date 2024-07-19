@@ -1,4 +1,4 @@
-<main>
+
 <div class="company-info">
             <table>
                 <thead>
@@ -52,5 +52,6 @@
             </ul>
         </div>
     </footer>
-</body>
-</html>
+<?php
+ 
+?>

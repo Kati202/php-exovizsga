@@ -6,10 +6,19 @@ use App\Config;
 class BaseController {
     protected $db;
 
-    public function __construct() {
+    public function __construct()
+    {
+        session_start();
+        $this->checkLogin();
+    }
+
+    protected function checkLogin()
+    {
         
-        $this->db = new \MongoDB\Client(
-            'mongodb://' . Config::MONGODB_HOST . ':' . Config::MONGODB_PORT
-        );
+        if (!isset($_SESSION['user_id'])) {
+            
+            header('Location: ' . Config::BASE_URL . 'login.php');
+            exit();
+        }
     }
 }

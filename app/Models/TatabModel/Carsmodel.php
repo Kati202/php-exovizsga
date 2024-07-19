@@ -200,7 +200,7 @@ public static function DeleteCarCost($id)
     $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
     return $result->getDeletedCount();
 }
-public static function SumCostByDateAndGroup($startDate, $endDate)
+/*public static function SumCostByDateAndGroup($startDate, $endDate)
 {
     self::Init();
 
@@ -225,6 +225,6 @@ public static function SumCostByDateAndGroup($startDate, $endDate)
 
     $result = $collection->aggregate($pipeline)->toArray();
     var_dump($result);
-}
+}*/
 }
 ?>

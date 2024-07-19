@@ -60,46 +60,52 @@ class CarsModel
         return $result->getDeletedCount();
     }
 
-    public static function InsertCarImage($imageData)
-{
-    self::Init();
-    $collection = self::$db->selectCollection(self::$collectionName);
-
-    try {
-        // Általános helyre beszúrjuk a képet
-        $result = $collection->insertOne($imageData);
-
-        if ($result->getInsertedCount() > 0) {
-            return true;
-        } else {
+    public static function InsertCarImage($carId, $filename,)
+    {
+        self::Init();
+        $collection = self::$db->selectCollection(self::$collectionName);
+    
+        try {
+            $imageData = [
+                'carId' => $carId,
+                'filename' => $filename,
+                
+                
+            ];
+    
+            // Beszúrjuk az adatbázisba csak a fájlnévvel
+            $result = $collection->insertOne($imageData);
+    
+            if ($result->getInsertedCount() > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (\Throwable $th) {
+            // Hibakezelés, ha valami nem sikerülne
             return false;
         }
-    } catch (\Throwable $th) {
-        // Hibakezelés, ha valami nem sikerülne
-        return false;
     }
-}
 
     public static function GetCarImages($carId)
     {
         self::Init();
         $collection = self::$db->selectCollection(self::$collectionName);
         try {
-            $images = $collection->find();
+            $images = $collection->find(['carId' => $carId]);
             return $images;
         } catch (\Throwable $th) {
             // Hibakezelés, ha valami nem sikerülne
             return [];
         }
     }
-
-    public static function DeleteCarImage($carId, $imageId)
+    public static function DeleteCarImage($carId, $filename,$data)
     {
         self::Init();
         $collection = self::$db->selectCollection(self::$collectionName);
-
+    
         try {
-            $result = $collection->deleteOne(['_id' => new ObjectId($imageId)]);
+            $result = $collection->deleteOne(['name' => $carId, 'filename' => $filename,'data'=>$data]);
     
             if ($result->getDeletedCount() > 0) {
                 return true;
@@ -129,7 +135,7 @@ public static function InsertCarCost($carcost)
         'ids' => $carcost['ids'],
         'date' => $date,  
         'part' => $carcost['part'],
-        'cost' => $carcost['cost'],
+        'cost' => (int)$carcost['cost'],
     ];
 
     
@@ -173,7 +179,7 @@ public static function UpdateCarCost($carcostId, $carcost)
         'ids' => $carcost['ids'],
         'date' => $date,  
         'part' => $carcost['part'],
-        'cost' => $carcost['cost'],
+        'cost' => (int)$carcost['cost'],
     ];
 
     
@@ -192,12 +198,12 @@ public static function DeleteCarCost($id)
     $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
     return $result->getDeletedCount();
 }
-public static function SumCostByDateAndGroup($startDate, $endDate)
+/*public static function SumCostByDateAndGroup($startDate, $endDate)
 {
     self::Init();
 
     $collection = self::$db->kecsocarcost;
-    
+
     $pipeline = [
         [
             '$match' => [
@@ -209,14 +215,16 @@ public static function SumCostByDateAndGroup($startDate, $endDate)
         ],
         [
             '$group' => [
-                '_id' => ['$toInt' => '$ids'],
-                'costsum' => ['$sum' => ['$toInt' => '$cost']],
+                '_id' => '$ids',
+                'costsum' => ['$sum' => '$cost'],
              ]
         ]
     ];
-
+   
     $result = $collection->aggregate($pipeline)->toArray();
     var_dump($result);
-}
+   
+    return $result;
+}*/
 }
 ?>

@@ -64,14 +64,16 @@ private static function DisplayCars()
     return $html;
 }
 //Cardata aloldal
+
 public static function CarData($carId)
 {
+    var_dump($carId);
     $html = '<form method="post" action="'. htmlspecialchars(Config::KECSO_URL_CARDATA) .'" enctype="multipart/form-data">';
     $html .= '<input type="hidden" name="carId" value="'. htmlspecialchars((string)$carId) .'">';
     $html .= IndexView::CreateInput('Fájl neve', 'data');
     $html .= '<div>
                 <label for="file">Válassz egy fájlt:</label>
-                <input type="file" name="file" id="file">
+                <input type="file" name="filename" id="file">
               </div>';
     $html .= '<button type="submit" name="upload">Fájl/kép hozzáadása</button>';
     $html .= '</form>';
@@ -87,7 +89,9 @@ public static function HandleFileUpload(): string
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
         $carId = $_POST['carId'];
+        $data = $_POST['data'];
         $file = $_FILES['filename'];
+        
 
         if ($file['error'] === UPLOAD_ERR_OK) {
             $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
@@ -113,7 +117,7 @@ public static function HandleFileUpload(): string
                     $inserted = CarsModel::InsertCarImage($carId, $imageData);
 
                     if ($inserted) {
-                        // Sikeres beszúrás esetén átirányítás
+                        
                         header("Location: " . htmlspecialchars(Config::KECSO_URL_CARDATA) . "?param=" . htmlspecialchars($carId));
                         exit();
                     } else {
@@ -147,10 +151,11 @@ private static function ListUploadedImages($carId)
 
             $html .= '<li>';
             $html .= '<img src="' . htmlspecialchars($imageUrl) . '" alt="Feltöltött kép">';
-            $html .= '<p>Fájl neve: <a href="' . htmlspecialchars($imageUrl) . '" target="_blank">' . htmlspecialchars($image['data']) . '</a></p>';
+            $html .= '<p>Fájl neve: <a href="' . htmlspecialchars($imageUrl) . '" target="_blank">' . htmlspecialchars($image['filename']) . '</a></p>';
+            $html .= IndexView::CreateInput('Fájl neve', 'data');
             $html .= '<form method="post">';
             $html .= '<input type="hidden" name="carId" value="'. htmlspecialchars($carId) .'">';
-            $html .= '<input type="hidden" name="deleteImageId" value="'. htmlspecialchars($image['_id']) .'">'; // '_id' mező az adatbázisban
+            $html .= '<input type="hidden" name="deleteImageId" value="'. htmlspecialchars($image['_id']) .'">'; 
             $html .= '<button type="submit" name="deleteImage">Kép törlése</button>';
             $html .= '</form>';
             $html .= '</li>';
@@ -285,45 +290,45 @@ private static function ListUploadedImages($carId)
     return $html;
     }
    
-
-    public static function ShowCostByGroup($cars, $startDate, $endDate)
-{
-    $html = '<h2>Rendszám szerint alkatrész árak összesítése (' . htmlspecialchars($startDate) . ' - ' . htmlspecialchars($endDate) . ')</h2>';
-
-    if (!empty($cars)) {
-        $html .= '<table border="1" cellpadding="10">
-                    <thead>
-                        <tr>
-                            <th>Rendszám</th>
-                            <th>Költségek</th>
-                        </tr>
-                    </thead>
-                    <tbody>';
-
-        foreach ($cars as $car) {
-            $html .= '<tr>
-                        <td>' . htmlspecialchars($car['ids'] ?? '') . '</td>
-                        <td>' . htmlspecialchars($car['cost'] ?? '') . '</td>
-                      </tr>';
+    
+    /*public static function ShowCostByGroup($cars, $startDate, $endDate)
+    {
+        $html = '<h2>Rendszám szerint alkatrész árak összesítése (' . htmlspecialchars($startDate) . ' - ' . htmlspecialchars($endDate) . ')</h2>';
+    
+        // Adatok megjelenítése táblázatban
+        if (!empty($cars)) {
+            $html .= '<table border="1" cellpadding="10">
+                        <thead>
+                            <tr>
+                                <th>Rendszám</th>
+                                <th>Költségek</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+    
+            foreach ($cars as $car) {
+                $html .= '<tr>
+                            <td>' . htmlspecialchars($car['_id'] ?? '') . '</td>
+                            <td>' . htmlspecialchars($car['costsum'] ?? '') . '</td>
+                          </tr>';
+            }
+    
+            $html .= '</tbody></table>';
+        } else {
+            $html .= '<p>Nincs adat az időszakra.</p>';
         }
-
-        $html .= '</tbody></table>';
-    } else {
-        $html .= '<p>Nincs adat az időszakra.</p>';
-    }
-
-    // Időszak kiválasztó űrlap megjelenítése
-    $html .= '<form method="post" action="' . htmlspecialchars(Config::KECSO_URL_CARCOST) . '">';
-    $html .= '<label for="startDate">Kezdő dátum:</label>';
-    $html .= '<input type="date" id="startDate" name="startDate" value="' . htmlspecialchars($startDate) . '">';
-    $html .= '<label for="endDate">Vég dátum:</label>';
-    $html .= '<input type="date" id="endDate" name="endDate" value="' . htmlspecialchars($endDate) . '">';
-    $html .= '<button type="submit" name="filter">Szűrés</button>';
-    $html .= '</form>';
-
-    return $html;
-}
-
+    
+        // Időszak kiválasztó űrlap megjelenítése
+        $html .= '<form method="post" action="' . htmlspecialchars(Config::KECSO_URL_CARCOST) . '">';
+        $html .= '<label for="startDate">Kezdő dátum:</label>';
+        $html .= '<input type="date" id="startDate" name="startDate" value="' . htmlspecialchars($startDate) . '">';
+        $html .= '<label for="endDate">Vég dátum:</label>';
+        $html .= '<input type="date" id="endDate" name="endDate" value="' . htmlspecialchars($endDate) . '">';
+        $html .= '<button type="submit" name="filter">Szűrés</button>';
+        $html .= '</form>';
+    
+        return $html;
+    }*/
    
 
 }

@@ -22,7 +22,7 @@ class Nyerges extends BaseController
 public function nyerges(): string
 {
        
-        session_start();
+        
        
 
         // Bejelentkezés kezelése
@@ -191,13 +191,11 @@ public function cardata4($param): string
    return $view;
 }
 
- public function carcost4($param): string
-{
-    session_start(); 
+public function carcost4($param): string {
     $view = IndexView::Begin();
     $view .= IndexView::StartTitle('Nyergesújfalui depó gépjárműveinek költségei');
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
+    /*if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
         $startDate = $_POST['startDate'] ?? date('Y-m-01');
         $endDate = $_POST['endDate'] ?? date('Y-m-t');
     } else {
@@ -206,7 +204,7 @@ public function cardata4($param): string
     }
 
     // Autók költségeinek összesítése dátum és csoport szerint
-    $cars = CarsModel::SumCostByDateAndGroup($startDate, $endDate);
+    $cars = CarsModel::SumCostByDateAndGroup($startDate, $endDate);*/
 
     $errors = [];
 
@@ -216,16 +214,18 @@ public function cardata4($param): string
             'ids' => $_POST['ids'],
             'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
             'part' => $_POST['part'],
-            'cost' => IndexView::customRound($_POST['cost']),
+            'cost' => $_POST['cost'],
         ];
-        if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
+        
+        if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part']) || empty($carcost['cost'])) {
             $errors[] = 'Minden mező kitöltése kötelező.';
         }
         if (!is_numeric($carcost['cost']) || $carcost['cost'] < 0) {
-            $errors[] = 'A költség nem lehet negatív szám.';
+            $errors[] = 'A költség nem lehet negatív szám vagy betű.';
         }
-    
+
         if (empty($errors)) {
+            $carcost['cost'] = IndexView::customRound($carcost['cost']);
             CarsModel::InsertCarCost($carcost);
             $_SESSION['success'] = 'A javítás költsége sikeresen hozzáadva.';
             header("Location: " . Config::NYERGES_URL_CARCOST);
@@ -258,20 +258,19 @@ public function cardata4($param): string
             'ids' => $_POST['ids'],
             'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
             'part' => $_POST['part'],
-            'cost' => IndexView::customRound($_POST['cost']),
+            'cost' => $_POST['cost'],
         ];
-    
-       
+
         if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
             $errors[] = 'Minden mező kitöltése kötelező.';
         }
-    
-        // Költség validáció: nem lehet negatív, és 0 is elfogadott
+
         if (!is_numeric($carcost['cost']) || $carcost['cost'] < 0) {
-            $errors[] = 'A költség nem lehet negatív szám.';
+            $errors[] = 'A költség nem lehet negatív szám vagy betű.';
         }
-    
+
         if (empty($errors)) {
+            $carcost['cost'] = IndexView::customRound($carcost['cost']);
             CarsModel::UpdateCarCost($_POST['editCarCostId'], $carcost);
             $_SESSION['success'] = 'A javítás költsége sikeresen frissítve.';
             header("Location: " . Config::NYERGES_URL_CARCOST);
@@ -298,16 +297,17 @@ public function cardata4($param): string
 
     // Autó költségek lekérése és megjelenítése
     $carcost = CarsModel::GetCarCost();
-    $view .= NyergesCarView::ShowCostByGroup($cars, $startDate, $endDate);
+    //$view .= NyergesCarView::ShowCostByGroup($cars, $startDate, $endDate);
     $view .= NyergesCarView::CarCost($carcost, $editcarcost);
     $view .= IndexView::End();
 
     return $view;
 }
+
 public function couriorData4($param): string
 {
     $view = IndexView::Begin();
-    session_start();
+    
      
     // Sikeres üzenetek megjelenítéseű
     if (isset($_SESSION['error_message'])) {
@@ -446,7 +446,8 @@ public function courioraddress4($param): string
 {
     // Oldal kezdete és session kezelése
     $view = IndexView::Begin();
-    session_start();
+    $ids = 'deliveryIds';
+   
 
     // Sikeres és hibaüzenetek kezelése
     if (isset($_SESSION['success_message'])) {
@@ -459,11 +460,11 @@ public function courioraddress4($param): string
         unset($_SESSION['error_message']);
     }
 
-    // Alapértelmezett dátumok beállítása
+    
     $startDate = date('Y-m-01');
     $endDate = date('Y-m-t');
 
-    // Dátum szűrés POST alapján
+    
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
         if (isset($_POST['startDate']) && strtotime($_POST['startDate']) !== false) {
             $startDate = date('Y-m-d', strtotime($_POST['startDate']));
@@ -476,10 +477,16 @@ public function courioraddress4($param): string
             $endDate = date('Y-m-d');
         }
     }
+    $filterParams = [
+        'startDate' => $startDate,
+        'endDate' => $endDate,
+        'ids' => isset($_POST['ids']) ? $_POST['ids'] : []
+    ];
 
     
     $deliveries = CouriorsModel::SumDeliveredAddressesByDateAndGroup($startDate, $endDate);
-    var_dump($deliveries);
+
+    $view .= NyergesCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate, $ids);
 
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newAddress'])) {
@@ -606,9 +613,6 @@ public function courioraddress4($param): string
     // Futárcímek lekérése az adatbázisból
     $addresses = CouriorsModel::GetAddresses();
 
-    // Megjelenítés összeállítása
-    $view .= NyergesCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate);
-    
     $view .= NyergesCouriorView::CouriorsAddress($addresses, $editaddress);
     $view .= IndexView::End();
 

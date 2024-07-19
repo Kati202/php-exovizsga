@@ -21,7 +21,7 @@ class Halas extends BaseController
 {
     public function halas(): string
     {
-        session_start();
+        
        
 
         // Bejelentkezés kezelése
@@ -190,13 +190,11 @@ public function cardata3($param): string
    return $view;
 }
 
- public function carcost3($param): string
-{
-    session_start(); 
+public function carcost3($param): string {
     $view = IndexView::Begin();
     $view .= IndexView::StartTitle('Kiskunhalasi depó gépjárműveinek költségei');
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
+    /*if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
         $startDate = $_POST['startDate'] ?? date('Y-m-01');
         $endDate = $_POST['endDate'] ?? date('Y-m-t');
     } else {
@@ -205,7 +203,7 @@ public function cardata3($param): string
     }
 
     // Autók költségeinek összesítése dátum és csoport szerint
-    $cars = CarsModel::SumCostByDateAndGroup($startDate, $endDate);
+    $cars = CarsModel::SumCostByDateAndGroup($startDate, $endDate);*/
 
     $errors = [];
 
@@ -215,16 +213,18 @@ public function cardata3($param): string
             'ids' => $_POST['ids'],
             'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
             'part' => $_POST['part'],
-            'cost' => IndexView::customRound($_POST['cost']),
+            'cost' => $_POST['cost'],
         ];
-        if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
+        
+        if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part']) || empty($carcost['cost'])) {
             $errors[] = 'Minden mező kitöltése kötelező.';
         }
         if (!is_numeric($carcost['cost']) || $carcost['cost'] < 0) {
-            $errors[] = 'A költség nem lehet negatív szám.';
+            $errors[] = 'A költség nem lehet negatív szám vagy betű.';
         }
-    
+
         if (empty($errors)) {
+            $carcost['cost'] = IndexView::customRound($carcost['cost']);
             CarsModel::InsertCarCost($carcost);
             $_SESSION['success'] = 'A javítás költsége sikeresen hozzáadva.';
             header("Location: " . Config::HALAS_URL_CARCOST);
@@ -257,20 +257,19 @@ public function cardata3($param): string
             'ids' => $_POST['ids'],
             'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
             'part' => $_POST['part'],
-            'cost' => IndexView::customRound($_POST['cost']),
+            'cost' => $_POST['cost'],
         ];
-    
-       
+
         if (empty($carcost['ids']) || empty($carcost['date']) || empty($carcost['part'])) {
             $errors[] = 'Minden mező kitöltése kötelező.';
         }
-    
-        // Költség validáció: nem lehet negatív, és 0 is elfogadott
+
         if (!is_numeric($carcost['cost']) || $carcost['cost'] < 0) {
-            $errors[] = 'A költség nem lehet negatív szám.';
+            $errors[] = 'A költség nem lehet negatív szám vagy betű.';
         }
-    
+
         if (empty($errors)) {
+            $carcost['cost'] = IndexView::customRound($carcost['cost']);
             CarsModel::UpdateCarCost($_POST['editCarCostId'], $carcost);
             $_SESSION['success'] = 'A javítás költsége sikeresen frissítve.';
             header("Location: " . Config::HALAS_URL_CARCOST);
@@ -297,16 +296,17 @@ public function cardata3($param): string
 
     // Autó költségek lekérése és megjelenítése
     $carcost = CarsModel::GetCarCost();
-    $view .= HalasCarView::ShowCostByGroup($cars, $startDate, $endDate);
+    //$view .= HalasCarView::ShowCostByGroup($cars, $startDate, $endDate);
     $view .= HalasCarView::CarCost($carcost, $editcarcost);
     $view .= IndexView::End();
 
     return $view;
 }
+
 public function couriorData3($param): string
 {
     $view = IndexView::Begin();
-    session_start();
+   
      
     // Sikeres üzenetek megjelenítéseű
     if (isset($_SESSION['error_message'])) {
@@ -445,7 +445,8 @@ public function courioraddress3($param): string
 {
     // Oldal kezdete és session kezelése
     $view = IndexView::Begin();
-    session_start();
+    $ids = 'deliveryIds';
+    
 
     // Sikeres és hibaüzenetek kezelése
     if (isset($_SESSION['success_message'])) {
@@ -458,11 +459,10 @@ public function courioraddress3($param): string
         unset($_SESSION['error_message']);
     }
 
-    // Alapértelmezett dátumok beállítása
     $startDate = date('Y-m-01');
     $endDate = date('Y-m-t');
 
-    // Dátum szűrés POST alapján
+    
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter'])) {
         if (isset($_POST['startDate']) && strtotime($_POST['startDate']) !== false) {
             $startDate = date('Y-m-d', strtotime($_POST['startDate']));
@@ -475,10 +475,17 @@ public function courioraddress3($param): string
             $endDate = date('Y-m-d');
         }
     }
+    $filterParams = [
+        'startDate' => $startDate,
+        'endDate' => $endDate,
+        'ids' => isset($_POST['ids']) ? $_POST['ids'] : []
+    ];
 
     
     $deliveries = CouriorsModel::SumDeliveredAddressesByDateAndGroup($startDate, $endDate);
-    var_dump($deliveries);
+
+    $view .= HalasCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate, $ids);
+    
 
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newAddress'])) {
@@ -605,9 +612,6 @@ public function courioraddress3($param): string
     // Futárcímek lekérése az adatbázisból
     $addresses = CouriorsModel::GetAddresses();
 
-    // Megjelenítés összeállítása
-    $view .= HalasCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate);
-    
     $view .= HalasCouriorView::CouriorsAddress($addresses, $editaddress);
     $view .= IndexView::End();
 
@@ -621,8 +625,7 @@ public static function depo3($param): string
     $editDepo = null;
     $errorMessages = []; // Hibaüzenetek tárolására
     
-    // Session kezelés inicializálása
-    session_start();
+    
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Depó szerkesztése előkészítése
@@ -698,16 +701,16 @@ public static function depo3($param): string
 }
 public function disp3($param): string
 {   
-    session_start();
+    
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Diszpécserek elérhetőségei');
     $dispdata = DispModel::GetDispdata(); 
     $editdisp = null; 
 
-    // Hibaüzenetek tömbje
+    
     $errors = [];
 
-    // Sikeres üzenetek tömbje
+    
     $successMessages = [];
 
     // Űrlap beküldésének és validációinak kezelése

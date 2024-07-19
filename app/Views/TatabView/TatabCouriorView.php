@@ -341,69 +341,86 @@ private static function DisplayCouriors()
         return $html;
     }
     
-    public static function ShowDeliveriesByGroup($deliveries, $startDate, $endDate, $selectedIds = [])
-{
-
-    $html = '<h2>Kézbesítések összesítése az időszakra (' . $startDate . ' - ' . $endDate . ')</h2>';
-
+    public static function ShowDeliveriesByGroup($deliveries, $startDate, $endDate, $ids, $selectedIds = [])
+    {
+        $html = '<h2>Kézbesítések összesítése az időszakra (' . htmlspecialchars($startDate) . ' - ' . htmlspecialchars($endDate) . ')</h2>';
     
-    $html .= '<form method="post" action="' . Config::TATAB_URL_COURIORADDRESS . '">
-                <label for="startDate">Kezdő dátum:</label>
-                <input type="date" id="startDate" name="startDate" value="' . htmlspecialchars($startDate) . '">
-                <label for="endDate">Vég dátum:</label>
-                <input type="date" id="endDate" name="endDate" value="' . htmlspecialchars($endDate) . '">';
-
+        
+        $html .= '<form method="post" action="' . htmlspecialchars(Config::TATAB_URL_COURIORADDRESS) . '">
+                    <label for="startDate">Kezdő dátum:</label>
+                    <input type="date" id="startDate" name="startDate" value="' . htmlspecialchars($startDate) . '">
+                    <label for="endDate">Vég dátum:</label>
+                    <input type="date" id="endDate" name="endDate" value="' . htmlspecialchars($endDate) . '">';
     
-    if ($deliveries !== null) {
-     
-        $html .= '<label for="ids">Válassz azonosítókat:</label>
-                    <select id="ids" name="ids[]" multiple>';
-
-       
-        if (!empty($deliveries)) {
-            foreach ($deliveries as $delivery) {
-                $html .= '<option value="' . htmlspecialchars($delivery['_id'] ?? '') . '" ' . (in_array($delivery['_id'], $selectedIds) ? 'selected' : '') . '>' . htmlspecialchars($delivery['_id'] ?? '') . '</option>';
+        
+        if ($deliveries !== null) {
+            $html .= '<label for="' . htmlspecialchars($ids) . '">Azonosítók:</label>
+                        <select id="' . htmlspecialchars($ids) . '" name="ids[]" multiple>';
+    
+            
+            if (!empty($selectedIds) && is_array($selectedIds)) {
+                foreach ($selectedIds as $selectedId) {
+                    $html .= '<option value="' . htmlspecialchars($selectedId) . '" selected>' . htmlspecialchars($selectedId) . '</option>';
+                }
             }
+    
+            $allIds = array_column($deliveries, '_id');
+            sort($allIds);
+            foreach ($allIds as $id) {
+                if (!in_array($id, $selectedIds)) {
+                    $html .= '<option value="' . htmlspecialchars($id) . '">' . htmlspecialchars($id) . '</option>';
+                }
+            }
+    
+            $html .= '</select>';
         }
-
-        $html .= '</select>';
-    }
-
     
-    $html .= '<button type="submit" name="filter">Szűrés</button>
-              </form>';
-
+        
+        $html .= '<button type="submit" name="filter">Szűrés</button>
+                  </form>';
     
-    if ($deliveries === null) {
-        $html .= '<p>Nincs adat az időszakra.</p>';
-    }
-
-    
-    if (!empty($deliveries)) {
-        $html .= '<table border="1" cellpadding="10">
-                    <thead>
-                        <tr>
-                            <th>Azonosító</th>
-                            <th>Összesen kézbesített címek száma</th>
-                        </tr>
-                    </thead>
-                    <tbody>';
-
-        foreach ($deliveries as $delivery) {
-            $html .= '<tr>
-                        <td>' . htmlspecialchars($delivery['_id'] ?? '') . '</td>
-                        <td>' . htmlspecialchars($delivery['totalDeliveredAddresses'] ?? '') . '</td>
-                      </tr>';
+        if ($deliveries === null) {
+            $html .= '<p>Nincs adat az időszakra.</p>';
         }
-
-        $html .= '</tbody></table>';
+    
+        if (!empty($deliveries) && is_array($deliveries)) {
+          
+            if (!empty($_POST['ids']) && is_array($_POST['ids'])) {
+                $filteredIds = $_POST['ids'];
+                usort($deliveries, function($a, $b) use ($filteredIds) {
+                    $posA = array_search($a['_id'], $filteredIds);
+                    $posB = array_search($b['_id'], $filteredIds);
+                    return $posA - $posB;
+                });
+            } else {
+               usort($deliveries, function($a, $b) {
+                    return $a['_id'] - $b['_id'];
+                });
+            }
+    
+            $html .= '<table class="deliveries-table" border="1" cellpadding="10">
+                        <thead>
+                            <tr>
+                                <th>Azonosító</th>
+                                <th>Összesen kézbesített címek száma</th>
+                            </tr>
+                        </thead>
+                        <tbody>';
+    
+            foreach ($deliveries as $delivery) {
+                $html .= '<tr>
+                            <td>' . htmlspecialchars($delivery['_id']) . '</td>
+                            <td>' . htmlspecialchars($delivery['totalDeliveredAddresses']) . '</td>
+                          </tr>';
+            }
+    
+            $html .= '</tbody></table>';
+        } else {
+            $html .= '<p>Nem sikerült betölteni az adatokat.</p>';
+        }
+    
+        return $html;
     }
-    
-    return $html;
-}
-
-    
-
     
    
 }

@@ -283,7 +283,7 @@ public static function CarData($carId)
     }
    }
 
-   public static function ShowCostByGroup($cars, $startDate, $endDate)
+   /*public static function ShowCostByGroup($cars, $startDate, $endDate)
    {
        $html = '<h2>Rendszám szerint alkatrész árak összesítése (' . htmlspecialchars($startDate) . ' - ' . htmlspecialchars($endDate) . ')</h2>';
    
@@ -319,6 +319,6 @@ public static function CarData($carId)
        $html .= '</form>';
    
        return $html;
-   }
+   }*/
 
 }

@@ -7,40 +7,42 @@ ini_set('display_errors', 'On');
 use App\Config;
 use App\Views\IndexView;
 
-class Home extends BaseController
+class Home 
 {
     public function index(): string
     {
         $view = IndexView::Begin();
+        $view .= $this->login();
         $view .= IndexView::Home();
         $view .= IndexView::End();
-
+        
         return $view;
     }
     
     public function login()
     {
+      
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             $username = $_POST['username'];
             $password = $_POST['password'];
 
-            // Ellenőrzés a depó felhasználók között
-            $users = Config::USERS; // Konfigurációs fájlban tárolt felhasználók
+           
+            $users = Config::USERS; 
             if (array_key_exists($username, $users) && $users[$username] === $password) {
-                $_SESSION['user_id'] = $username; // Felhasználónév tárolása
+                $_SESSION['user_id'] = $username; // 
                 $_SESSION['username'] = $username;
-                header('Location: ' . Config::BASE_URL . 'kecso'); // Vagy a megfelelő oldal, ahova irányítani szeretnéd
+                header('Location: ' . Config::BASE_URL . 'kecso'); 
                 exit();
             } else {
-                // Sikertelen bejelentkezés
+                
                 $_SESSION['error_message'] = 'Hibás felhasználónév vagy jelszó.';
                 header('Location: ' . Config::BASE_URL . 'login.php');
                 exit();
             }
         }
 
-        // Bejelentkezési űrlap megjelenítése
-        ob_start(); // Bufferelés indítása
+        
+        ob_start(); 
 
         if (isset($_SESSION['error_message'])) {
             echo '<p style="color: red;">' . htmlspecialchars($_SESSION['error_message']) . '</p>';
@@ -69,9 +71,17 @@ class Home extends BaseController
         </html>
         <?php
 
-        $content = ob_get_clean(); // Buffer tartalmának lezárása és lementése változóba
+        $content = ob_get_clean(); 
 
         return $content;
+    }
+    public function logout()
+    {
+        session_start();
+        session_unset(); 
+        session_destroy(); 
+        header('Location: ' . Config::BASE_URL . 'login.php'); 
+        exit();
     }
 }
 ?>
