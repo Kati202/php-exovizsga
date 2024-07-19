@@ -72,7 +72,7 @@ public static function CarData($cardata, $editcardata = null)
     foreach ($groupedData as $ids => $items) {
         $html .= self::DisplayCarDataGroup($ids, $items, $editcardata);
     }
-
+    
     $html .= self::CreateCarDataForm();
     return $html;
 }
@@ -116,7 +116,6 @@ private static function DisplayCarDataGroup($ids, $items, $editcardata)
                     </tr>
                 </thead>
                 <tbody>';
-
     foreach ($items as $item) {
         $html .= '<tr>
                     <td>' . htmlspecialchars($item['ids'] ?? '') . '</td>
@@ -126,7 +125,7 @@ private static function DisplayCarDataGroup($ids, $items, $editcardata)
                     <td>
                         <form method="post" action="' . Config::KECSO_URL_CARDATA . '?operation=cardata&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
                             <input type="hidden" name="updateCarDataId" value="' . ($item['_id'] ?? '') . '">
-                            <button type="submit" name="updateCardata">Szerkesztés</button>
+                            <button type="submit" name="updateCarData">Szerkesztés</button>
                         </form>
                         <form method="post" action="' . Config::KECSO_URL_CARDATA . '" style="display:inline;">
                             <input type="hidden" name="deleteCarDataId" value="' . ($item['_id'] ?? '') . '">
@@ -136,8 +135,7 @@ private static function DisplayCarDataGroup($ids, $items, $editcardata)
                         </form>
                     </td>
                 </tr>';
-
-        // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
+        
         if ($editcardata && $editcardata['_id'] == $item['_id']) {
             $html .= '<tr><td colspan="10">' . self::CarDataEdit($editcardata) . '</td></tr>';
         }
@@ -166,7 +164,7 @@ public static function CreateCarDataForm()
 
 private static function CarDataEdit($editcardata)
 {
-    var_dump($editcardata);
+    
     $html = '<form method="post" action="' . Config::KECSO_URL_CARDATA . '">';
     $html .= '<input type="hidden" name="editCarDataId" value="' . $editcardata['_id'] . '">';
     $html .= IndexView::CreateInputValue('Rendszám', 'ids', $editcardata['ids']);
@@ -196,7 +194,6 @@ private static function CarDataEdit($editcardata)
                 <button type="submit" name="calculateConsumption">Számítás</button>
             </form>';
 
-    // Eredmény megjelenítése, ha van
     if ($result) {
         $html .= '<h1>Az átlagfogyasztás:</h1>
                   <h4>' . htmlspecialchars($result) . '</h4>';
@@ -283,7 +280,6 @@ private static function CarDataEdit($editcardata)
                         </td>
                     </tr>';
     
-            // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
             if ($editcarcost && $editcarcost['_id'] == $item['_id']) {
                 $html .= '<tr><td colspan="10">' . self::CarCostEdit($editcarcost) . '</td></tr>';
             }

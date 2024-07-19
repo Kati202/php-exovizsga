@@ -8,7 +8,7 @@ class Config
     const MONGODB_HOST = 'localhost';
     const MONGODB_PORT = 27017;
     
-    // Depókhoz tartozó felhasználónevek és jelszavak
+    // Depókhhoz tartozó felhasználónevek és jelszavak késöbb majd kibővítem specifikusra ha lesz rá igény 
     const USERS = [
         'kecso' => 'kecso12345',
         'tatab' => 'tatab12345',

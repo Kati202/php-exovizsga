@@ -69,7 +69,7 @@ class NyergesDepoView
                                         </td>
                                       </tr>';
 
-                // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
+                
                 if ($editDepo && $editDepo['_id'] == $depo['_id']) {
                     $html .= '<tr><td colspan="3">' . self::DepoEdit($editDepo) . '</td></tr>';
                 }

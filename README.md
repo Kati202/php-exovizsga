@@ -1,11 +1,11 @@
-Az EXO. depós projekt célja a kecskeméti, kiskunhalasi, nyergesújfalui és tatabányai depók működésének kezelése, különös tekintettel a gépjárművek és futárok adatainak kezelésére. Ezenfelül depó adat aloldal és diszpécseres aloldal is rendelkezésre áll (átalános adatgyűjtésre). A projekt lehetőséget biztosít gépjárművek, futárok, depó adatok, valamint diszpécser adatok hozzáadására, frissítésére, törlésére, illetve a (költségek és futárcímadatok bizonyos időn belüli) nyomon követésére.
+Az EXO. depós projekt célja a kecskeméti, kiskunhalasi, nyergesújfalui és tatabányai depók működésének kezelése, különös tekintettel a gépjárművek és futárok adatainak kezelésére. Ezenfelül depó adat aloldal és diszpécseres aloldal is rendelkezésre áll (átalános adatgyűjtésre). A projekt lehetőséget biztosít gépjárművek, futárok, depó adatok, valamint diszpécser adatok hozzáadására, frissítésére, törlésére,futárcímadatok bizonyos időn belüli nyomon követésére illetve rendelkezésre áll egy üzemanyagszámítási űrlap.A projektem összeszedettség terén nem a legjobb ezt később javítom majd(de próbáltam segíteni adatmegjelölésekkel).Köszönöm az éves munkád sokat tanultam/tanultunk tőled :Đ!
 
 ## Funkciók
 
-- **Gépjárműkezelés**: Járművek hozzáadása, frissítése, törlése és megjelenítése.
+- **Gépjárműkezelés tankolás terén**: Járművek hozzáadása, frissítése, törlése és megjelenítése valamint üzemanyag számítás.
 - **Futárkezelés**: Futárok adatainak hozzáadása, frissítése, törlése és megjelenítése.
-- **Költségkezelés**: A járművek fenntartási költségeinek bizonyos időn belüli nyomon követése.
-- **Kézbesített címek kezelése**: Kézbesített szállítások bizonyos időn belüli nyomon követése.
+- **Költségkezelés**: A járművek fenntartási költségeinek nyomon követése.
+- **Kézbesített címek kezelése**: Kézbesített szállítások bizonyos időn belüli nyomon követése frissítés,törlése,megjelenítése.
 - **Depó adatainak kezelése**:Depó adatainak hozzáadása, frissítése, törlése és megjelenítése.
 - **Diszpécser adatok kezelés**:Diszpécser adatainak hozzáadása, frissítése, törlése és megjelenítése.
 
@@ -20,6 +20,7 @@ Az EXO. depós projekt célja a kecskeméti, kiskunhalasi, nyergesújfalui és t
 2. Telepítsd a szükséges függőségeket:
     ```sh
     composer install
+    oldalhoz való bejelentkezés a Configba
     ```
 
 ## Használat

@@ -11,6 +11,7 @@ class Home
 {
     public function index(): string
     {
+        //Főoldal
         $view = IndexView::Begin();
         $view .= $this->login();
         $view .= IndexView::Home();
@@ -21,9 +22,9 @@ class Home
     
     public function login()
     {
-      
-       var_dump( session_start());
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+      //Login felület
+       session_start();
+       if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             $username = $_POST['username'];
             $password = $_POST['password'];
 
@@ -78,6 +79,7 @@ class Home
     }
     public function logout()
     {
+        //Logout
         session_start();
         session_unset(); 
         session_destroy(); 

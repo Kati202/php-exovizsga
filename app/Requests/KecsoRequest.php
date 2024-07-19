@@ -2,7 +2,7 @@
 namespace App\Requests;
 
 class KecsoRequest
-{
+{ //Ezeket összeszedtem de nem mindenütt használtam lehet a késöbbiekben átalakítom majd
     //Cars
     public static function CarsInsert()
     {

@@ -13,7 +13,7 @@ $page = isset($_GET['page']) ? $_GET['page'] : '';
 $operation = isset($_GET['operation']) ? $_GET['operation'] : '';
 $param = isset($_GET['param']) ? $_GET['param'] : '';
 
-
+//Fő routes 
 switch ($page) {
     case 'kecso':
         $kecsoController = new Kecso();

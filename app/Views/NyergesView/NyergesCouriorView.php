@@ -32,7 +32,6 @@ public static function ShowCourior()
     });
     $html = '';
 
-    // Csoportosítás az 'ids' kulcs alapján
     $groupedData = [];
     foreach ($couriordata as $courior) {
         $ids = htmlspecialchars($courior->ids ?? '');
@@ -43,13 +42,12 @@ public static function ShowCourior()
         $groupedData[$ids][] = $courior;
     }
 
-    // Csoportosított adatok megjelenítése
     foreach ($groupedData as $ids => $couriors) {
         $html .= '<h3>FutárSz.: ' . htmlspecialchars($ids) . '</h3>';
         $html .= self::DisplayCouriorGroup($couriors, $editcourior);
     }
 
-    // Új elem hozzáadása űrlap
+    
     $html .= '<form method="post" action="' . Config::NYERGES_URL_COURIORDATA . '?param=' . $id . '">';
     $html .= IndexView::CreateInput('Azonosító', 'ids');
     $html .= IndexView::CreateInput('Neve', 'name');
@@ -125,7 +123,6 @@ private static function DisplayCouriorGroup($couriors, $editcourior = null)
                     </td>
                   </tr>';
 
-        // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
         if ($editcourior && $editcourior['_id'] == $couriorId) {
             $html .= '<tr><td colspan="7">' . self::CouriorEdit($editcourior) . '</td></tr>';
         }
@@ -284,7 +281,6 @@ private static function DisplayCouriors()
                         </td>
                     </tr>';
     
-            // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
             if ($editaddress && $editaddress['_id'] == $item['_id']) {
                 $html .= '<tr><td colspan="10">' . self::AddressEdit($editaddress) . '</td></tr>';
             }

@@ -21,43 +21,13 @@ class Nyerges extends BaseController
 {
 public function nyerges(): string
 {
-       
-        
-       
-
-        // Bejelentkezés kezelése
-        /*if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-            // MongoDB kapcsolat inicializálása
-            $databaseManager = new DatabaseManager();
-            $usersCollection = $databaseManager->connectToMongoDB()->users;
-
-            $username = $_POST['kecso'];
-            $password = $_POST['kecso12345'];
-
-            // Keresés a felhasználók között
-            $user = $usersCollection->findOne(['username' => $username, 'password' => $password]);
-
-            if ($user) {
-                $_SESSION['user_id'] = (string) $user['_id'];
-                $_SESSION['username'] = $user['username'];
-                header('Location: ' . Config::BASE_URL . 'kecso'); // Vagy a megfelelő oldal, ahova irányítani szeretnéd
-                exit();
-            } else {
-                // Sikertelen bejelentkezés
-                $_SESSION['error_message'] = 'Hibás felhasználónév vagy jelszó.';
-                header('Location: ' . Config::BASE_URL . 'login.php');
-                exit();
-            }
-        }*/
-
-        // Oldal tartalmának összeállítása
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Nyergesújfalui depó főoldal');
 
-        // Gépjárművek kezelése
+        
         $view .= CarsModel::Init();
 
-        // Üzenetek megjelenítése
+        
         if (isset($_SESSION['success_message'])) {
             $view .= '<p class="success-message">' . htmlspecialchars($_SESSION['success_message']) . '</p>';
             unset($_SESSION['success_message']);
@@ -99,12 +69,11 @@ public function nyerges(): string
         // Gépjárművek megjelenítése
         $view .= NyergesCarView::ShowCar();
 
-        // Futárok kezelése
         if (KecsoRequest::CouriorInsert()) {
             $ids = $_POST['ids'] ?? '';
             $name = $_POST['name'] ?? '';
 
-            // Azonosító validálása: 
+            
             if (empty($ids) || empty($name)) {
                 $_SESSION['error_message'] = 'Futár név hozzáadáshoz minden mező kitöltése kötelező';
             } else if (ctype_digit($ids) && preg_match('/^[\p{L}\s]+$/u', $name)) {
@@ -133,64 +102,168 @@ public function nyerges(): string
             exit();
         }
 
-        // Futárok megjelenítése növekvő sorrendben
         $couriors = CouriorsModel::GetCouriors();
         usort($couriors, function ($a, $b) {
             return $a['ids'] - $b['ids'];
         });
         $view .= NyergesCouriorView::ShowCourior($couriors);
 
-        // Gombok megjelenítése
         $view .= NyergesDepoView::ShowDepoButton();
         $view .= NyergesDispView::ShowDispButton();
 
-        // Oldalzárás
         $view .= IndexView::End();
 
         return $view;
     }
+    public function cardata4($param): string
+    {
+        $view = IndexView::Begin();
+        $view .= IndexView::StartTitle('Nyergesújfalui depó gépjárműveinek tankolással kapcsolatos információi');
+        
+        $errors = [];
+        $result = '';
+        $beforeKm = '';
+        $afterKm = '';
+        $totalLiters = '';
     
-
-
+        // Új gépjármű adat hozzáadása
+        if (isset($_POST['newCarData'])) {
+            $cardata = [
+                'ids' => trim($_POST['ids']),
+                'km' => trim($_POST['km']),
+                'liters' => trim($_POST['liters']),
+                'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
+            ];
     
-public function cardata4($param): string
- {
+            if (empty($cardata['ids']) || empty($cardata['date']) || empty($cardata['km']) || empty($cardata['liters'])) {
+                $errors[] = 'Minden mező kitöltése kötelező.';
+            } elseif (!is_numeric($cardata['km']) || $cardata['km'] < 0) {
+                $errors[] = 'A kilométer nem lehet negatív szám vagy betű.';
+            } elseif (!is_numeric($cardata['liters']) || $cardata['liters'] < 0) {
+                $errors[] = 'A liter nem lehet negatív szám vagy betű.';
+            }
+    
+            if (empty($errors)) {
+                // Új adat hozzáadása
+                CarsModel::InsertCarData($cardata);
+                $_SESSION['success'] = 'A gépjármű tankolásának adata sikeresen hozzáadva.';
+                header("Location: " . Config::NYERGES_URL_CARDATA);
+                exit();
+            } else {
+                $_SESSION['errors'] = $errors;
+                header("Location: " . Config::NYERGES_URL_CARDATA);
+                exit();
+            }
+        }
+    
+        // Gépjármű adat törlése
+        if (isset($_POST['deleteCarDataId'])) {
+            $carDataId = $_POST['deleteCarDataId'];
+            CarsModel::DeleteCarData($carDataId);
+            $_SESSION['success'] = 'A gépjármű tankolásának adata sikeresen törölve.';
+            header("Location: " . Config::NYERGES_URL_CARDATA);
+            exit();
 
-
-  $carId = isset($param) ? $param : null;
-  $view = IndexView::Begin();
-  $view .= IndexView::StartTitle('Gépjármű adatai');
-  $view .= CarsModel::Init();
-
-
-
-   // Fájlfeltöltés kezelése
-   if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
-    $view .= NyergesCarView::HandleFileUpload();
-   }
-
-   // Kép törlésének kezelése
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteImage'])) {
-    $carId = $_POST['carId'];
-    $imageId = $_POST['deleteImageId'];
-
-    $deleted = CarsModel::DeleteCarImage($carId, $imageId);
-    if ($deleted) {
-        $_SESSION['success'] = 'A kép sikeresen törölve.';
-    } else {
-        $_SESSION['errors'] = ['Hiba történt a kép törlése során.'];
+        }
+    
+        // Gépjármű adat szerkesztése
+        $editCarData = null;
+        if (isset($_POST['updateCarData'])) {
+            $editCarData = CarsModel::GetCarDataById($_POST['updateCarDataId']); 
+            
+        }
+    
+        if (isset($_POST['saveCarData'])) {
+            $cardata = [
+                'ids' => trim($_POST['ids']),
+                'km' => trim($_POST['km']),
+                'liters' => trim($_POST['liters']),
+                'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
+            ];
+    
+            // Validálás
+            if (empty($cardata['ids']) || empty($cardata['date']) || empty($cardata['km']) || empty($cardata['liters'])) {
+                $errors[] = 'Minden mező kitöltése kötelező.';
+            } elseif (!is_numeric($cardata['km']) || $cardata['km'] < 0) {
+                $errors[] = 'A kilométer nem lehet negatív szám vagy betű.';
+            } elseif (!is_numeric($cardata['liters']) || $cardata['liters'] < 0) {
+                $errors[] = 'A liter nem lehet negatív szám vagy betű.';
+            }
+    
+            if (empty($errors)) {
+                // Adat frissítése
+                CarsModel::UpdateCarData($_POST['editCarDataId'], $cardata);
+                $_SESSION['success'] = 'A gépjármű adat sikeresen frissítve.';
+                header("Location: " . Config::NYERGES_URL_CARDATA);
+                exit();
+            } else {
+                $_SESSION['errors'] = $errors;
+                header("Location: " . Config::NYERGES_URL_CARDATA);
+                exit();
+            }
+        }
+    
+        // Átlagfogyasztás számítás kezelése
+        if (isset($_POST['calculateConsumption'])) {
+            $beforeKm = isset($_POST['previousKm']) ? (float)$_POST['previousKm'] : 0;
+            $afterKm = isset($_POST['currentKm']) ? (float)$_POST['currentKm'] : 0;
+            $totalLiters = isset($_POST['totalLiters']) ? (float)$_POST['totalLiters'] : 0;
+    
+            if ($afterKm > $beforeKm) {
+                $distanceTravelled = $afterKm - $beforeKm;
+                if ($distanceTravelled > 0) {
+                    $averageConsumption = ($totalLiters / $distanceTravelled) * 100;
+                    $result = number_format($averageConsumption, 2) . ' liter/100 km';
+                } else {
+                    $errors[] = 'A jelenlegi kilométerállás nem lehet kisebb, mint az előző kilométerállás.';
+                }
+            } else {
+                $errors[] = 'A jelenlegi kilométerállás nem lehet kisebb, mint az előző kilométerállás.';
+            }
+    
+            if (empty($errors)) {
+                $_SESSION['success'] = 'Az átlagfogyasztás sikeresen kiszámítva.';
+                $_SESSION['result'] = $result;
+            } else {
+                $_SESSION['errors'] = $errors;
+            }
+    
+            header("Location: " . Config::NYERGES_URL_CARDATA);
+            exit();
+        }
+        
+        
+        if (isset($_SESSION['success'])) {
+            $view .= '<div class="success-message">' . $_SESSION['success'] . '</div>';
+            unset($_SESSION['success']);
+        }
+    
+        if (isset($_SESSION['errors']) && !empty($_SESSION['errors'])) {
+            foreach ($_SESSION['errors'] as $error) {
+                $view .= '<div class="error-message">' . $error . '</div>';
+            }
+            unset($_SESSION['errors']);
+        }
+    
+        if (isset($_SESSION['result'])) {
+            $result = $_SESSION['result'];
+            unset($_SESSION['result']);
+        } else {
+            $result = '';
+        }
+    
+        // Gépjármű adatok lekérése és megjelenítése
+        $carData = CarsModel::GetCarData();
+        
+        $view .= NyergesCarView::CarData($carData, $editCarData);
+        $view .= NyergesCarView::RenderForm($result, $beforeKm, $afterKm, $totalLiters);
+    
+        $view .= IndexView::End();
+    
+        return $view;
     }
- }
 
-
-    $view .= NyergesCarView::CarData($carId);
-
-    $view .= IndexView::End();
-
-   return $view;
-}
-
-public function carcost4($param): string {
+    public function carcost4($param): string {
     $view = IndexView::Begin();
     $view .= IndexView::StartTitle('Nyergesújfalui depó gépjárműveinek költségei');
 
@@ -250,8 +323,6 @@ public function carcost4($param): string {
     if (isset($_POST['updateCarcost'])) {
         $editcarcost = CarsModel::GetCarCostById($_POST['updateCarCostId']);
     }
-
-    // Autó költség szerkesztésének mentése
     if (isset($_POST['saveCarCost'])) {
         $carcost = [
             'ids' => $_POST['ids'],
@@ -281,7 +352,6 @@ public function carcost4($param): string {
         }
     }
 
-    // Megjelenítés: sikeres üzenetek, hibaüzenetek kezelése
     if (isset($_SESSION['success'])) {
         $view .= '<div class="success-message">' . $_SESSION['success'] . '</div>';
         unset($_SESSION['success']);
@@ -307,9 +377,7 @@ public function couriorData4($param): string
 {
     $view = IndexView::Begin();
     
-     
-    // Sikeres üzenetek megjelenítéseű
-    if (isset($_SESSION['error_message'])) {
+     if (isset($_SESSION['error_message'])) {
         $html .= '<div class="error-message">' . $_SESSION['error_message'] . '</div>';
         unset($_SESSION['error_message']);
     }
@@ -319,9 +387,6 @@ public function couriorData4($param): string
         unset($_SESSION['success_message']);
     }
 
-    
-
-    // Hibaüzenetek kezelése
     $error = '';
 
     // Új futár hozzáadása  
@@ -334,8 +399,7 @@ public function couriorData4($param): string
         $address = $_POST['address'] ?? '';
         $mothername = $_POST['mothername'] ?? '';
 
-        // Ellenőrizzük, hogy minden mező ki legyen töltve
-        if (empty($ids) || empty($name) || empty($date) || empty($dateaddress) || empty($age) || empty($address) || empty($mothername)) {
+    if (empty($ids) || empty($name) || empty($date) || empty($dateaddress) || empty($age) || empty($address) || empty($mothername)) {
             $error = '<p class="error-message">Minden mező kitöltése kötelező!</p>';
         } elseif (!ctype_digit($ids)) {
             $error = '<p class="error-message">Az azonosító mező csak számot tartalmazhat!</p>';
@@ -362,8 +426,6 @@ public function couriorData4($param): string
         }
     }
 
-    // Egyéb POST kérések kezelése
-
     // Futár törlése  
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && KecsoRequest::CouriorDelete()) {
         $deleteCouriorId = $_POST['deleteCouriorId'] ?? null;
@@ -385,7 +447,6 @@ public function couriorData4($param): string
         }
     }
 
-    // Futár mentése
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && KecsoRequest::CouriorSave()) {
         $editCouriorId = $_POST['editCouriorId'] ?? null;
         $ids = (int)$_POST['ids'] ?? '';
@@ -396,8 +457,7 @@ public function couriorData4($param): string
         $address = $_POST['address'] ?? '';
         $mothername = $_POST['mothername'] ?? '';
 
-       
-        if (empty($ids) || empty($name) || empty($date) || empty($dateaddress) || empty($age) || empty($address) || empty($mothername)) {
+       if (empty($ids) || empty($name) || empty($date) || empty($dateaddress) || empty($age) || empty($address) || empty($mothername)) {
             $error = '<p class="error-message">Minden mező kitöltése kötelező!</p>';
         } elseif (!ctype_digit((string)$ids)) {
             $error = '<p class="error-message">Az azonosító mező csak számot tartalmazhat!</p>';
@@ -424,15 +484,13 @@ public function couriorData4($param): string
         }
     }
 
-    // Futárok adatainak lekérése az adatbázisból
+    // Futárok adatainak lekérése megjelenítése
     $couriorData = CouriorsModel::GetCouriorData();
    
-    // Futárok megjelenítése
     $view .= IndexView::OpenSection('Futár adatai');
     $view .= NyergesCouriorView::CouriorData($couriorData, $editCourior, $id);
     $view .= IndexView::CloseSection();
 
-    // Hibaüzenet megjelenítése
     if (!empty($error)) {
         $view .= $error;
     }
@@ -443,12 +501,9 @@ public function couriorData4($param): string
 }
 public function courioraddress4($param): string
 {
-    // Oldal kezdete és session kezelése
     $view = IndexView::Begin();
     $ids = 'deliveryIds';
    
-
-    // Sikeres és hibaüzenetek kezelése
     if (isset($_SESSION['success_message'])) {
         $view .= '<div class="success-message">' . $_SESSION['success_message'] . '</div>';
         unset($_SESSION['success_message']);
@@ -488,7 +543,7 @@ public function courioraddress4($param): string
     $view .= NyergesCouriorView::ShowDeliveriesByGroup($deliveries, $startDate, $endDate, $ids);
 
     
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newAddress'])) {
+    if  ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newAddress'])) {
        
         if (!ctype_digit($_POST['ids'])) {
             $_SESSION['error_message'] = 'Az azonosító mező csak számot tartalmazhat.';
@@ -538,8 +593,6 @@ public function courioraddress4($param): string
         }
     }
 
-    // Egyéb POST kérések kezelése (törlés, szerkesztés, mentés)
-
     // Futár törlése
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteAddressId'])) {
         $addressId = $_POST['deleteAddressId'];
@@ -580,7 +633,6 @@ public function courioraddress4($param): string
 
         if (empty($error)) {
             try {
-                // Adatok frissítése az adatbázisban
                 $address = [
                     'name' => $_POST['name'],
                     'ids' => (int)$_POST['ids'],
@@ -609,9 +661,8 @@ public function courioraddress4($param): string
         }
     }
 
-    // Futárcímek lekérése az adatbázisból
+    // Futárcímek lekérése megjelenítése
     $addresses = CouriorsModel::GetAddresses();
-
     $view .= NyergesCouriorView::CouriorsAddress($addresses, $editaddress);
     $view .= IndexView::End();
 
@@ -623,10 +674,7 @@ public static function depo4($param): string
     $view .= IndexView::OpenSection('Depó adatai');
     
     $editDepo = null;
-    $errorMessages = []; // Hibaüzenetek tárolására
-    
-    // Session kezelés inicializálása
-    session_start();
+    $errorMessages = []; 
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Depó szerkesztése előkészítése
@@ -678,7 +726,6 @@ public static function depo4($param): string
         }
     }
     
-    // Megjelenítjük a hibaüzenetet, ha van
     if (isset($_SESSION['error_message'])) {
         $view .= '<div>';
         $view .= '<p>' . htmlspecialchars($_SESSION['error_message']) . '</p>';
@@ -702,16 +749,13 @@ public static function depo4($param): string
 }
 public function disp4($param): string
 {   
-    session_start();
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Diszpécserek elérhetőségei');
     $dispdata = DispModel::GetDispdata(); 
     $editdisp = null; 
 
-    // Hibaüzenetek tömbje
+    
     $errors = [];
-
-    // Sikeres üzenetek tömbje
     $successMessages = [];
 
     // Űrlap beküldésének és validációinak kezelése
@@ -722,11 +766,11 @@ public function disp4($param): string
             $title = $_POST['title'] ?? '';
             $phone = $_POST['phone'] ?? '';
 
-            // Alap validáció: üres mezők ellenőrzése
+            // Alap validáció
             if (empty($name) || empty($title) || empty($phone)) {
                 $errors[] = 'Minden mező kitöltése kötelező.';
             } else {
-                // Specifikus validáció: név és munkaterület mező betű formátum ellenőrzése
+                // Specifikus validáció
                 if (!self::isValidNameFormat($name)) {
                     $errors[] = 'A Név mező csak betűket és megengedett egyéb karaktereket tartalmazhat.';
                 }
@@ -734,7 +778,6 @@ public function disp4($param): string
                     $errors[] = 'A Munkaterület mező csak betűket és megengedett egyéb karaktereket tartalmazhat.';
                 }
 
-                // Telefonszám validáció
                 if (!empty($phone) && !self::isValidPhoneFormat($phone)) {
                     $errors[] = 'A Telefonszám formátuma nem megfelelő.';
                 }
@@ -757,7 +800,7 @@ public function disp4($param): string
             exit();
         }
 
-        // Frissítés előkészítése
+        // Frissítés 
         if (isset($_POST['updateDisp'])) {
             $editDispId = $_POST['updateDispId'] ?? '';
             
@@ -766,18 +809,17 @@ public function disp4($param): string
             }
         }
 
-        // Frissítés mentése
         if (isset($_POST['saveDisp'])) {
             $editDispId = $_POST['editDispId'] ?? '';
             $name = $_POST['name'] ?? '';
             $title = $_POST['title'] ?? '';
             $phone = $_POST['phone'] ?? '';
 
-            // Alap validáció: üres mezők ellenőrzése
+            // Alap validáció
             if (empty($name) || empty($title) || empty($phone)) {
                 $errors[] = 'Minden mező kitöltése kötelező.';
             } else {
-                // Specifikus validáció: név és munkaterület mező betű formátum ellenőrzése
+                // Specifikus validáció
                 if (!self::isValidNameFormat($name)) {
                     $errors[] = 'A Név mező csak betűket és megengedett egyéb karaktereket tartalmazhat.';
                 }
@@ -785,7 +827,6 @@ public function disp4($param): string
                     $errors[] = 'A Munkaterület mező csak betűket és megengedett egyéb karaktereket tartalmazhat.';
                 }
 
-                // Telefonszám validáció
                 if (!empty($phone) && !self::isValidPhoneFormat($phone)) {
                     $errors[] = 'A Telefonszám formátuma nem megfelelő.';
                 }
@@ -800,13 +841,13 @@ public function disp4($param): string
         }
     }
 
-    // Sikerüzenet megjelenítése
+    
     if (isset($_SESSION['success'])) {
         $view .= '<div class="success-message">' . $_SESSION['success'] . '</div>';
         unset($_SESSION['success']);
     }
 
-    // Hibák megjelenítése
+    
     if (!empty($errors)) {
         foreach ($errors as $error) {
             $view .= '<div class="error-message">' . $error . '</div>';
@@ -821,19 +862,19 @@ public function disp4($param): string
 }
 private static function isValidPhoneFormat($phone)
 {
-    // Elfogadott karakterek: számok, szóköz, +, és a következő speciális karakterek: ()/-.
+    
     return preg_match('/^(06)(((20|30|70)[0-9]{7})|((?!(30|20|70))[0-9]{8,9}))$/', $phone) || preg_match('/^(\+?[\d\s-]+)$/', $phone);
 }
 
 private static function isValidNameFormat($name) 
 {
-    // Elfogadott karakterek: betűk, szóköz, és a következő speciális karakterek: .,-
+    
     return preg_match('/^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű\s.,-]+$/', $name);
 }
 
 private static function isValidTitleFormat($title) 
 {
-    // Elfogadott karakterek: betűk, szóköz, és a következő speciális karakterek: .,-
+    
     return preg_match('/^[A-Za-zÁÉÍÓÖŐÚÜŰáéíóöőúüű\s.,-]+$/', $title);
 }
 

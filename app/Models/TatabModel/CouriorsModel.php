@@ -28,7 +28,6 @@ class CouriorsModel
 
     $collection = self::$db->selectCollection('tatabcouriors');
     
-    // Ellenőrizzük, hogy van-e már ilyen ids vagy name az adatbázisban
     $existingCourior = $collection->findOne([
         '$or' => [
             ['ids' => $courior['ids']],
@@ -38,7 +37,6 @@ class CouriorsModel
 
     if ($existingCourior === null) 
     {
-        // Ha nincs még ilyen ids vagy name, akkor hozzáadjuk a futárt
         $result = $collection->insertOne($courior);
         return $result;
     } 
@@ -80,7 +78,6 @@ class CouriorsModel
 
     $collection = self::$db->tatabcouriorsdata;
 
-    // Ellenőrizzük, hogy az ids mező egyedi legyen
     $existingCourior = $collection->findOne([
         'ids' => (int)$data['ids']
     ]);
@@ -96,7 +93,6 @@ class CouriorsModel
         throw new \Exception('Már létezik ilyen névvel futár.');
     }
 
-    // Beszúrás az adatbázisba
     $result = $collection->insertOne($data);
 
     return $result;
@@ -140,19 +136,15 @@ public static function InsertAddress($address)
     self::Init();
     $collection = self::$db->tatabaddresses;
 
-    // Ellenőrizzük, hogy az "ids" mező szám
     if (!is_numeric($address['ids'])) {
         throw new Exception('Az "ids" mező csak szám lehet.');
     }
 
-    // Idő formázása UTCDateTime objektummá
     $time = new UTCDateTime(strtotime($address['time']) * 1000);
 
-    
     $final_return = isset($address['final_return']) ? (int)$address['final_return'] : 0;
     $live_return = isset($address['live_return']) ? (int)$address['live_return'] : 0;
 
-    // Beszúrási adatok összeállítása
     $insertData = [
         'name' => $address['name'],
         'ids' => (int)$address['ids'],
@@ -165,7 +157,6 @@ public static function InsertAddress($address)
         'live_return' => $live_return
     ];
 
-    // Adatok beszúrása az adatbázisba
     $result = $collection->insertOne($insertData);
     return $result;
   }
@@ -185,8 +176,6 @@ public static function InsertAddress($address)
         $collection = self::$db->tatabaddresses;
         $address = $collection->findOne(['_id' => new ObjectId($id)]);
     
-        // Dátum formázás, ha szükséges
-        // Például: $address['date'] helyett a tényleges dátum mező nevét kell itt használni
         if ($address && isset($address['time']) && $address['time'] instanceof \MongoDB\BSON\UTCDateTime) {
             $address['time'] = $address['time']->toDateTime()->format('Y-m-d H:i:s');
         }
@@ -199,14 +188,12 @@ public static function InsertAddress($address)
         self::Init();
         $collection = self::$db->tatabaddresses;
 
-        // Ellenőrzés: ids mező típusa
         if (!is_numeric($address['ids'])) {
             throw new Exception('Az "ids" mező csak szám lehet.');
         }
         $final_return = isset($address['final_return']) ? (int)$address['final_return'] : 0;
         $live_return = isset($address['live_return']) ? (int)$address['live_return'] : 0;
 
-        // További mezők ellenőrzése és adatok frissítése
         $time = new UTCDateTime(strtotime($address['time']) * 1000);
         $updateData = [
             'name' => $address['name'],

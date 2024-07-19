@@ -10,7 +10,7 @@ class CarsModel
 {
     private static $db;
     private static $client;
-    private static $collectionName = 'tatabcar_images';
+    private static $collectionName = 'halascardata';
 
     public static function Init()
     {
@@ -30,8 +30,7 @@ class CarsModel
     $existingCar = $collection->findOne(['ids' => $car['ids']]);
     
     if ($existingCar === null) {
-        // Ha nincs még ilyen ids, akkor hozzáadjuk az autót
-        $result = $collection->insertOne($car);
+         $result = $collection->insertOne($car);
         return $result;}
     }
 
@@ -60,7 +59,7 @@ class CarsModel
     public static function InsertCarData($cardata) 
    {
     self::Init();
-    $collection = self::$db->cardata; // Az új kollekció neve
+    $collection = self::$db->tatabcardata; 
 
     $date = new UTCDateTime(strtotime($cardata['date']) * 1000);
 
@@ -77,17 +76,18 @@ class CarsModel
    public static function GetCarData()
    {
        self::Init();
-       $collection = self::$db->cardata; // Az új kollekció neve
+       $collection = self::$db->tatabcardata;
        $cursor = $collection->find();
        return $cursor->toArray();
    }
    public static function GetCarDataById($cardataId)
    {
        self::Init();
-       $collection = self::$db->cardata; // Az új kollekció neve
+       //ez valamiért csak így működött
+       $collection = self::$db->{self::$collectionName};
        $cardata = $collection->findOne(['_id' => new \MongoDB\BSON\ObjectID($cardataId)]);
    
-       // Ellenőrizd a dátum típusát és formázását
+       
        if ($cardata && isset($cardata['date']) && $cardata['date'] instanceof \MongoDB\BSON\UTCDateTime) {
            $cardata['date'] = $cardata['date']->toDateTime()->format('Y-m-d H:i:s');
        }
@@ -97,7 +97,7 @@ class CarsModel
    public static function UpdateCarData($cardataId, $cardata)
    {
        self::Init();
-       $collection = self::$db->cardata; // Az új kollekció neve
+       $collection = self::$db->tatabcardata;
    
        $date = new UTCDateTime(strtotime($cardata['date']) * 1000);
    
@@ -112,13 +112,13 @@ class CarsModel
            ['_id' => new \MongoDB\BSON\ObjectID($cardataId)],
            ['$set' => $updateData]
        );
-   
+       
        return $result;
    }
    public static function DeleteCarData($id)
    {
        self::Init();
-       $collection = self::$db->cardata; // Az új kollekció neve
+       $collection = self::$db->tatabcardata;
        $result = $collection->deleteOne(['_id' => new \MongoDB\BSON\ObjectID($id)]);
        return $result->getDeletedCount();
    }
@@ -160,7 +160,6 @@ public static function GetCarCostById($carcostId)
     $collection = self::$db->tatabcarcost;
     $carcost = $collection->findOne(['_id' => new \MongoDB\BSON\ObjectID($carcostId)]);
 
-    // Ellenőrizd a dátum típusát és formázását
     if ($carcost && isset($carcost['date']) && $carcost['date'] instanceof \MongoDB\BSON\UTCDateTime) {
         $carcost['date'] = $carcost['date']->toDateTime()->format('Y-m-d H:i:s');
     }

@@ -62,98 +62,144 @@ private static function DisplayCars()
 
     return $html;
 }
-//Cardata aloldal
-public static function CarData($carId)
-    {
-        $html = '<form method="post" action="'. Config::NYERGES_URL_CARDATA .'" enctype="multipart/form-data">';
-        $html .= '<input type="hidden" name="carId" value=if (!is_string($carId))';
-        $html .= IndexView::CreateInput('Fálj neve', 'data');
-        $html .= '<div>
-                    <label for="file">Válassz egy fájlt:</label>
-                    <input type="file" name="file" id="file">
-                  </div>';
-        $html .= '<button type="submit" name="upload">Fájl/kép hozzáadása</button>';
-        $html .= '</form>';
+  //Cardata aloldal
+public static function CarData($cardata, $editcardata = null)
+{
+    $html = '';
+    $groupedData = self::GroupDataCarData($cardata);
 
-        // Feltöltött képek listázása
-        $html .= self::ListUploadedImages($carId);
-
-        return $html;
+    foreach ($groupedData as $ids => $items) {
+        $html .= self::DisplayCarDataGroup($ids, $items, $editcardata);
     }
-    public static function HandleFileUpload(): string
-   {
+    
+    $html .= self::CreateCarDataForm();
+    return $html;
+}
+private static function GroupDataCarData($cardata)
+{
+    $groupedData = [];
+    
+    foreach ($cardata as $car) {
+        $ids = $car['ids'];
+
+        if (!isset($groupedData[$ids])) {
+            $groupedData[$ids] = [];
+        }
+        $groupedData[$ids][] = [
+            'ids' => $car['ids'],
+            'km' => $car['km'],
+            'liters' => $car['liters'],
+            'date' => $car['date'],
+            '_id' => (string) $car['_id'],
+        ];
+    }
+
+    return $groupedData;
+}
+private static function DisplayCarDataGroup($ids, $items, $editcardata)
+{
     $html = '';
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
-        $carId = $_POST['carId'];
-        $file = $_FILES['file'];
+    if (!empty($ids)) {
+        $html .= '<h2>' . htmlspecialchars($ids) . '</h2>';
+    }
 
+    $html .= '<table border="1" cellpadding="10">
+                <thead>
+                    <tr>
+                        <th>Rendszám</th>
+                        <th>Km állás</th>
+                        <th>Tankolt liter</th>
+                        <th>Időpont</th>
+                        <th>Műveletek</th>
+                    </tr>
+                </thead>
+                <tbody>';
+    foreach ($items as $item) {
+        $html .= '<tr>
+                    <td>' . htmlspecialchars($item['ids'] ?? '') . '</td>
+                    <td>' . htmlspecialchars($item['km'] ?? '') . '</td>
+                    <td>' . htmlspecialchars($item['liters'] ?? '') . '</td>
+                    <td>' . htmlspecialchars(date('Y-m-d H:i', strtotime($item['date']->toDateTime()->format('Y-m-d H:i')))) . '</td>
+                    <td>
+                        <form method="post" action="' . Config::NYERGES_URL_CARDATA . '?operation=cardata4&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
+                            <input type="hidden" name="updateCarDataId" value="' . ($item['_id'] ?? '') . '">
+                            <button type="submit" name="updateCarData">Szerkesztés</button>
+                        </form>
+                        <form method="post" action="' . Config::NYERGES_URL_CARDATA . '" style="display:inline;">
+                            <input type="hidden" name="deleteCarDataId" value="' . ($item['_id'] ?? '') . '">
+                            <input type="hidden" name="operation" value="cardata">
+                            <input type="hidden" name="param" value="' . ($item['_id'] ?? '') . '">
+                            <button type="submit" name="deleteCardata">Törlés</button>
+                        </form>
+                    </td>
+                </tr>';
         
-
-        if ($file['error'] === UPLOAD_ERR_OK) {
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
-            $detectedType = mime_content_type($file['tmp_name']);
-
-            if (in_array($detectedType, $allowedTypes)) {
-                $uploadDir = 'uploads/';
-                $selectedFolder = 'nyerges';
-
-                if (!is_dir($uploadDir . $selectedFolder)) {
-                    mkdir($uploadDir . $selectedFolder, 0777, true);
-                }
-
-                $uniqueFileName = uniqid() . '_' . basename($file['name']);
-                $uploadFile = $uploadDir . $selectedFolder . '/' . $uniqueFileName;
-
-                if (move_uploaded_file($file['tmp_name'], $uploadFile)) {
-                    $imageData = [
-                        'data' => $_POST['data'],
-                        'file' => $uniqueFileName
-                    ];
-                    CarsModel::InsertCarImage($carId, $imageData);
-
-                    // Sikeres feltöltés esetén átirányítás
-                    header("Location: " . Config::NYERGES_URL_CARDATA . "?param=" . htmlspecialchars($carId));
-                    exit();
-                } else {
-                    $html .= "Hiba történt a kép feltöltése során.";
-                }
-            } else {
-                $html .= "Csak JPG, JPEG, PNG és GIF típusú képek feltöltése engedélyezett.";
-            }
-        } else {
-            $html .= "Hiba történt a fájl feltöltése során: " . $_FILES['file']['error'];
+        if ($editcardata && $editcardata['_id'] == $item['_id']) {
+            $html .= '<tr><td colspan="10">' . self::CarDataEdit($editcardata) . '</td></tr>';
         }
     }
 
-    return $html;
-   }
-  
-   private static function ListUploadedImages($carId)
-{
-    $uploadDir = 'uploads/halas/';
-    $carImages = CarsModel::GetCarImages($carId);
-
-    $html = '<h2>Feltöltött képek:</h2>';
-
-    if (!empty($carImages)) {
-        $html .= '<ul>';
-        foreach ($carImages as $image) {
-            $imageUrl = $uploadDir . $image['file'];
-
-            $html .= '<li>';
-            $html .= '<img src="' . htmlspecialchars($imageUrl) . '" alt="Feltöltött kép">';
-            $html .= '<p>Fájl neve: <a href="' . htmlspecialchars($imageUrl) . '" target="_blank">' . htmlspecialchars($image['data']) . '</a></p>';
-            $html .= '</li>';
-        }
-        $html .= '</ul>';
-    } else {
-        $html .= '<p>Nincsenek feltöltött képek.</p>';
-    }
+    $html .= '</tbody></table>';
 
     return $html;
 }
 
+public static function CreateCarDataForm()
+{
+    $html = '<form method="post" action="' . Config::NYERGES_URL_CARDATA . '">';
+    $html .= IndexView::CreateInput('Rendszám', 'ids');
+    $html .= '<label for="km">Km állás:</label>';
+    $html .= '<input type="number" id="km" name="km">';
+    $html .= '<label for="liters">Tankolt liter:</label>';
+    $html .= '<input type="number" id="liters" name="liters">';
+    $html .= '<label for="date">Időpont:</label>';
+    $html .= '<input type="datetime-local" id="date" name="date">';
+    $html .= '<button type="submit" name="newCarData">Új adat hozzáadása</button>';
+    $html .= '</form>';
+
+    return $html;
+}
+
+private static function CarDataEdit($editcardata)
+{
+    
+    $html = '<form method="post" action="' . Config::NYERGES_URL_CARDATA . '">';
+    $html .= '<input type="hidden" name="editCarDataId" value="' . $editcardata['_id'] . '">';
+    $html .= IndexView::CreateInputValue('Rendszám', 'ids', $editcardata['ids']);
+    $html .= '<label for="km">Km állás:</label>';
+    $html .= '<input type="number" id="km" name="km" value="' . htmlspecialchars($editcardata['km']) . '">';
+    $html .= '<label for="liters">Tankolt liter:</label>';
+    $html .= '<input type="number" id="liters" name="liters" value="' . htmlspecialchars($editcardata['liters']) . '">';
+    $html .= '<label for="date">Időpont:</label>';
+    $html .= '<input type="datetime-local" id="date" name="date" value="' . date('Y-m-d\TH:i', strtotime($editcardata['date'])) . '">';
+    $html .= '<button type="submit" name="saveCarData">Mentés</button>';
+    $html .= '</form>';
+
+    return $html;
+}
+ public static function RenderForm($result = '', $beforeKm = '', $afterKm = '', $totalLiters = '') {
+    
+    $html = '<form method="post" action="">
+                <label for="previousKm">Előző kilométerállás (km):</label>
+                <input type="number" id="previousKm" name="previousKm" step="0.01" value="' . htmlspecialchars($beforeKm) . '" required>
+                <br><br>
+                <label for="currentKm">Jelenlegi kilométerállás (km):</label>
+                <input type="number" id="currentKm" name="currentKm" step="0.01" value="' . htmlspecialchars($afterKm) . '" required>
+                <br><br>
+                <label for="totalLiters">Tankolt liter:</label>
+                <input type="number" id="totalLiters" name="totalLiters" step="0.01" value="' . htmlspecialchars($totalLiters) . '" required>
+                <br><br>
+                <button type="submit" name="calculateConsumption">Számítás</button>
+            </form>';
+
+    if ($result) {
+        $html .= '<h1>Az átlagfogyasztás:</h1>
+                  <h4>' . htmlspecialchars($result) . '</h4>';
+    }
+
+    return $html;
+}
 //Carcost aloldal 
   public static function CarCost($carcost, $editcarcost = null)
     {
@@ -232,7 +278,6 @@ public static function CarData($carId)
                         </td>
                     </tr>';
     
-            // Ha a szerkesztési gomb megnyomásra került, jelenjen meg a szerkesztési űrlap
             if ($editcarcost && $editcarcost['_id'] == $item['_id']) {
                 $html .= '<tr><td colspan="10">' . self::CarCostEdit($editcarcost) . '</td></tr>';
             }

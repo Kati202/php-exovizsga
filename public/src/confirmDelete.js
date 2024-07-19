@@ -12,3 +12,4 @@ function confirmDelete(id) {
     }
     
 }
+//JSt végülis nem tettem bele ezt is majd ha késöbb lesz rá igény hozzáadom
