@@ -3,10 +3,6 @@ namespace App\Requests;
 
 class KecsoRequest
 {
-    public static function Delete()
-    {
-        return isset($_POST['guaranteedDeleteId'],$_POST['guaranteedDelete']);
-    }
     //Cars
     public static function CarsInsert()
     {
@@ -16,6 +12,25 @@ class KecsoRequest
     public static function CarsDelete()
     {
         return isset($_POST['deleteCarId']);
+    }
+    public static function CarDataInsert()
+    {
+        return isset($_POST['ids']) && isset($_POST['km']) && isset($_POST['liters']) &&
+               isset($_POST['date']) && isset($_POST['newCarData']);
+    }
+    public static function CarDataDelete()
+    {
+        return isset($_POST['deleteCarDataId']) && isset($_POST['deleteCarData']);
+    }
+    public static function CarDataUpdate()
+    {
+        return isset($_POST['updateCarDataId']) && isset($_POST['updateCarData']);
+    }
+    public static function CarDataSave()
+    {
+        return isset($_POST['editCarDataId']) && isset($_POST['saveCarData']) &&
+               isset($_POST['ids']) && isset($_POST['km']) && isset($_POST['liters']) &&
+               isset($_POST['date']);
     }
     public static function CarCostInsert()
     {

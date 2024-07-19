@@ -345,6 +345,7 @@ private static function DisplayCouriors()
     
     public static function ShowDeliveriesByGroup($deliveries, $startDate, $endDate, $ids, $selectedIds = [])
 {
+    
     $html = '<h2>Kézbesítések összesítése az időszakra (' . htmlspecialchars($startDate) . ' - ' . htmlspecialchars($endDate) . ')</h2>';
 
     
@@ -400,7 +401,7 @@ private static function DisplayCouriors()
             });
         }
 
-        $html .= '<table class="deliveries-table" border="1" cellpadding="10">
+        $html .= '<table  border="1"cellpadding="10">
                     <thead>
                         <tr>
                             <th>Azonosító</th>
@@ -420,7 +421,7 @@ private static function DisplayCouriors()
     } else {
         $html .= '<p>Nem sikerült betölteni az adatokat.</p>';
     }
-
+    
     return $html;
 }
 

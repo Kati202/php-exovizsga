@@ -4,7 +4,7 @@ namespace App\Controllers;
 use App\Config;
 
 class BaseController {
-    protected $db;
+    
 
     public function __construct()
     {

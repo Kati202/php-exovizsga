@@ -21,36 +21,6 @@ class Tatab extends BaseController
 {
 public function tatab(): string
 {
-       
-       
-       
-
-        // Bejelentkezés kezelése
-        /*if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
-            // MongoDB kapcsolat inicializálása
-            $databaseManager = new DatabaseManager();
-            $usersCollection = $databaseManager->connectToMongoDB()->users;
-
-            $username = $_POST['kecso'];
-            $password = $_POST['kecso12345'];
-
-            // Keresés a felhasználók között
-            $user = $usersCollection->findOne(['username' => $username, 'password' => $password]);
-
-            if ($user) {
-                $_SESSION['user_id'] = (string) $user['_id'];
-                $_SESSION['username'] = $user['username'];
-                header('Location: ' . Config::BASE_URL . 'kecso'); // Vagy a megfelelő oldal, ahova irányítani szeretnéd
-                exit();
-            } else {
-                // Sikertelen bejelentkezés
-                $_SESSION['error_message'] = 'Hibás felhasználónév vagy jelszó.';
-                header('Location: ' . Config::BASE_URL . 'login.php');
-                exit();
-            }
-        }*/
-
-        // Oldal tartalmának összeállítása
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Tatabányai depó főoldal');
 
@@ -104,15 +74,14 @@ public function tatab(): string
             $ids = $_POST['ids'] ?? '';
             $name = $_POST['name'] ?? '';
 
-            // Azonosító validálása: csak számok lehetnek
+            // Azonosító validálása: 
             if (empty($ids) || empty($name)) {
-                $_SESSION['error_message'] = 'Futár hozzáadáshoz minden mező kitöltése kötelező!';
+                $_SESSION['error_message'] ='Futár név hozzáadáshoz minden mező kitöltése kötelező';
             } else if (ctype_digit($ids) && preg_match('/^[\p{L}\s]+$/u', $name)) {
-                // Az $name változóban csak betűk és szóközök lehetnek
                 $courior = ['ids' => (int) $ids, 'name' => $name];
                 $result = CouriorsModel::InsertCouriors($courior);
                 if ($result) {
-                    $_SESSION['success_message'] = 'A futár adatai sikeresen hozzá lett adva.';
+                    $_SESSION['success_message'] ='A futár neve sikeresen hozzáadva a táblához.';
                 } else {
                     $_SESSION['error_message'] = 'Már létezik ilyen azonosítóval vagy névvel futár.';
                 }
@@ -128,7 +97,7 @@ public function tatab(): string
             $couriorId = $_POST['deleteCouriorId'] ?? '';
             if (!empty($couriorId)) {
                 CouriorsModel::DeleteCouriors($couriorId);
-                $_SESSION['success_message'] = 'A futár adatai sikeresen törölve.';
+                $_SESSION['success_message'] = 'A futár neve sikeresen törölve a táblából.';
             }
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();

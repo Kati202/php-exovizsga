@@ -11,9 +11,7 @@ class CarsModel
 {
     private static $db;
     private static $client;
-    private static $collectionName = 'kecsocarimages';
- 
-
+    
     public static function Init()
     {
         if (self::$db === null) 
@@ -59,65 +57,74 @@ class CarsModel
         $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
         return $result->getDeletedCount();
     }
+   
+    public static function InsertCarData($cardata) 
+   {
+    self::Init();
+    $collection = self::$db->kecsocardata; 
 
-    public static function InsertCarImage($carId, $filename,)
-    {
-        self::Init();
-        $collection = self::$db->selectCollection(self::$collectionName);
-    
-        try {
-            $imageData = [
-                'carId' => $carId,
-                'filename' => $filename,
-                
-                
-            ];
-    
-            // Beszúrjuk az adatbázisba csak a fájlnévvel
-            $result = $collection->insertOne($imageData);
-    
-            if ($result->getInsertedCount() > 0) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch (\Throwable $th) {
-            // Hibakezelés, ha valami nem sikerülne
-            return false;
-        }
-    }
+    $date = new UTCDateTime(strtotime($cardata['date']) * 1000);
 
-    public static function GetCarImages($carId)
-    {
-        self::Init();
-        $collection = self::$db->selectCollection(self::$collectionName);
-        try {
-            $images = $collection->find(['carId' => $carId]);
-            return $images;
-        } catch (\Throwable $th) {
-            // Hibakezelés, ha valami nem sikerülne
-            return [];
-        }
-    }
-    public static function DeleteCarImage($carId, $filename,$data)
-    {
-        self::Init();
-        $collection = self::$db->selectCollection(self::$collectionName);
-    
-        try {
-            $result = $collection->deleteOne(['name' => $carId, 'filename' => $filename,'data'=>$data]);
-    
-            if ($result->getDeletedCount() > 0) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch (\Throwable $th) {
-            // Hibakezelés, ha valami nem sikerülne
-            return false;
-        }
-    }
+    $insertData = [
+        'ids' => $cardata['ids'],
+        'km' => $cardata['km'],
+        'liters' => $cardata['liters'],
+        'date' => $date,
+    ];
 
+    $result = $collection->insertOne($insertData);
+    return $result;
+   }
+   public static function GetCarData()
+   {
+       self::Init();
+       $collection = self::$db->kecsocardata;
+       $cursor = $collection->find();
+       return $cursor->toArray();
+   }
+   public static function GetCarDataById($cardataId)
+   {
+       self::Init();
+       $collection = self::$db->$kecsocardata;
+       $cardata = $collection->findOne(['_id' => new \MongoDB\BSON\ObjectID($cardataId)]);
+   
+       
+       if ($cardata && isset($cardata['date']) && $cardata['date'] instanceof \MongoDB\BSON\UTCDateTime) {
+           $cardata['date'] = $cardata['date']->toDateTime()->format('Y-m-d H:i:s');
+       }
+   
+       return $cardata;
+   }
+   public static function UpdateCarData($cardataId, $cardata)
+   {
+       self::Init();
+       $collection = self::$db->kecsocardata;
+   
+       $date = new UTCDateTime(strtotime($cardata['date']) * 1000);
+   
+       $updateData = [
+           'ids' => $cardata['ids'],
+           'km' => $cardata['km'],
+           'liters' => $cardata['liters'],
+           'date' => $date,
+       ];
+   
+       $result = $collection->updateOne(
+           ['_id' => new \MongoDB\BSON\ObjectID($cardataId)],
+           ['$set' => $updateData]
+       );
+   
+       return $result;
+   }
+   public static function DeleteCarData($id)
+   {
+       self::Init();
+       $collection = self::$db->kecsocardata;
+       $result = $collection->deleteOne(['_id' => new \MongoDB\BSON\ObjectID($id)]);
+       return $result->getDeletedCount();
+   }
+   
+    
 
 
 //CarCost   

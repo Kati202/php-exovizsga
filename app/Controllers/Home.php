@@ -22,6 +22,7 @@ class Home
     public function login()
     {
       
+       var_dump( session_start());
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
             $username = $_POST['username'];
             $password = $_POST['password'];

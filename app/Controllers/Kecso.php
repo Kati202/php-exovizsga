@@ -20,11 +20,8 @@ use App\DatabaseManager;
 
 class Kecso extends BaseController
 {
-  
-public function kecso(): string
+   public function kecso(): string
     {
-        
-       
         // Oldal tartalmának összeállítása
         $view = IndexView::Begin();
         $view .= IndexView::StartTitle('Kecskeméti depó főoldal');
@@ -79,15 +76,14 @@ public function kecso(): string
             $ids = $_POST['ids'] ?? '';
             $name = $_POST['name'] ?? '';
 
-            // Azonosító validálása: csak számok lehetnek
+            // Azonosító validálása: 
             if (empty($ids) || empty($name)) {
-                $_SESSION['error_message'] = 'Futár hozzáadáshoz minden mező kitöltése kötelező!';
+                $_SESSION['error_message'] = 'Futár név hozzáadáshoz minden mező kitöltése kötelező!';
             } else if (ctype_digit($ids) && preg_match('/^[\p{L}\s]+$/u', $name)) {
-                // Az $name változóban csak betűk és szóközök lehetnek
                 $courior = ['ids' => (int) $ids, 'name' => $name];
                 $result = CouriorsModel::InsertCouriors($courior);
                 if ($result) {
-                    $_SESSION['success_message'] = 'A futár adatai sikeresen hozzáadva.';
+                    $_SESSION['success_message'] = 'A futár neve sikeresen hozzáadva a táblához.';
                 } else {
                     $_SESSION['error_message'] = 'Már létezik ilyen azonosítóval vagy névvel futár.';
                 }
@@ -103,7 +99,7 @@ public function kecso(): string
             $couriorId = $_POST['deleteCouriorId'] ?? '';
             if (!empty($couriorId)) {
                 CouriorsModel::DeleteCouriors($couriorId);
-                $_SESSION['success_message'] = 'A futár adatai sikeresen törölve .';
+                $_SESSION['success_message'] = 'A futár neve sikeresen törölve a táblából .';
             }
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();
@@ -126,40 +122,158 @@ public function kecso(): string
 
         return $view;
     }
-    
-
     public function cardata($param): string
     {
-        
-        $carId = isset($param) ? $param : null;
         $view = IndexView::Begin();
-        $view .= IndexView::StartTitle('Gépjármű adatai');
-        $view .= CarsModel::Init();
-
-        // Fájlfeltöltés kezelése
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload'])) {
-            $view .= KecsoCarView::HandleFileUpload();
-        }
-
-        // Kép törlésének kezelése
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteImage'])) {
-            $carId = $_POST['carId'];
-            $imageId = $_POST['deleteImageId'];
-
-            $deleted = CarsModel::DeleteCarImage($carId, $imageId);
-            if ($deleted) {
-                $_SESSION['success'] = 'A kép sikeresen törölve.';
+        $view .= IndexView::StartTitle('Kecskeméti depó gépjárműveinek tankolással kapcsolatos információi');
+        
+        $errors = [];
+        $result = '';
+        $beforeKm = '';
+        $afterKm = '';
+        $totalLiters = '';
+    
+        // Új gépjármű adat hozzáadása
+        if (isset($_POST['newCarData'])) {
+            $cardata = [
+                'ids' => trim($_POST['ids']),
+                'km' => trim($_POST['km']),
+                'liters' => trim($_POST['liters']),
+                'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
+            ];
+    
+            // Validálás
+            if (empty($cardata['ids']) || empty($cardata['date']) || empty($cardata['km']) || empty($cardata['liters'])) {
+                $errors[] = 'Minden mező kitöltése kötelező.';
+            } elseif (!is_numeric($cardata['km']) || $cardata['km'] < 0) {
+                $errors[] = 'A kilométer nem lehet negatív szám vagy betű.';
+            } elseif (!is_numeric($cardata['liters']) || $cardata['liters'] < 0) {
+                $errors[] = 'A liter nem lehet negatív szám vagy betű.';
+            }
+    
+            if (empty($errors)) {
+                // Új adat hozzáadása
+                CarsModel::InsertCarData($cardata);
+                $_SESSION['success'] = 'A gépjármű tankolásának adata sikeresen hozzáadva.';
+                header("Location: " . Config::KECSO_URL_CARDATA);
+                exit();
             } else {
-                $_SESSION['errors'] = ['Hiba történt a kép törlése során.'];
+                $_SESSION['errors'] = $errors;
+                header("Location: " . Config::KECSO_URL_CARDATA);
+                exit();
             }
         }
-
-        $view .= KecsoCarView::CarData($carId);
-
+    
+        // Gépjármű adat törlése
+        if (isset($_POST['deleteCarData'])) {
+            $carDataId = $_POST['deleteCarDataId'];
+            CarsModel::DeleteCarData($carDataId);
+            $_SESSION['success'] = 'A gépjármű tankolásának adata sikeresen törölve.';
+            header("Location: " . Config::KECSO_URL_CARDATA);
+            exit();
+        }
+    
+        // Gépjármű adat szerkesztése
+        $editCarData = null;
+        if (isset($_POST['updateCarData'])) {
+            $editCarData = CarsModel::GetCarDataById($_POST['updateCarDataId']);
+        }
+    
+        // Gépjármű adat szerkesztésének mentése
+        if (isset($_POST['saveCarData'])) {
+            $cardata = [
+                'ids' => trim($_POST['ids']),
+                'km' => trim($_POST['km']),
+                'liters' => trim($_POST['liters']),
+                'date' => date('Y-m-d H:i:s', strtotime($_POST['date'])),
+            ];
+    
+            // Validálás
+            if (empty($cardata['ids']) || empty($cardata['date']) || empty($cardata['km']) || empty($cardata['liters'])) {
+                $errors[] = 'Minden mező kitöltése kötelező.';
+            } elseif (!is_numeric($cardata['km']) || $cardata['km'] < 0) {
+                $errors[] = 'A kilométer nem lehet negatív szám vagy betű.';
+            } elseif (!is_numeric($cardata['liters']) || $cardata['liters'] < 0) {
+                $errors[] = 'A liter nem lehet negatív szám vagy betű.';
+            }
+    
+            if (empty($errors)) {
+                // Adat frissítése
+                CarsModel::UpdateCarData($_POST['editCarDataId'], $cardata);
+                $_SESSION['success'] = 'A gépjármű adat sikeresen frissítve.';
+                header("Location: " . Config::KECSO_URL_CARDATA);
+                exit();
+            } else {
+                $_SESSION['errors'] = $errors;
+                header("Location: " . Config::KECSO_URL_CARDATA);
+                exit();
+            }
+        }
+    
+        // Átlagfogyasztás számítás kezelése
+        if (isset($_POST['calculateConsumption'])) {
+            $beforeKm = isset($_POST['previousKm']) ? (float)$_POST['previousKm'] : 0;
+            $afterKm = isset($_POST['currentKm']) ? (float)$_POST['currentKm'] : 0;
+            $totalLiters = isset($_POST['totalLiters']) ? (float)$_POST['totalLiters'] : 0;
+    
+            if ($afterKm > $beforeKm) {
+                $distanceTravelled = $afterKm - $beforeKm;
+                if ($distanceTravelled > 0) {
+                    $averageConsumption = ($totalLiters / $distanceTravelled) * 100;
+                    $result = number_format($averageConsumption, 2) . ' liter/100 km';
+                } else {
+                    $errors[] = 'A jelenlegi kilométerállás nem lehet kisebb, mint az előző kilométerállás.';
+                }
+            } else {
+                $errors[] = 'A jelenlegi kilométerállás nem lehet kisebb, mint az előző kilométerállás.';
+            }
+    
+            if (empty($errors)) {
+                $_SESSION['success'] = 'Az átlagfogyasztás sikeresen kiszámítva.';
+                $_SESSION['result'] = $result;
+            } else {
+                $_SESSION['errors'] = $errors;
+            }
+    
+            header("Location: " . Config::KECSO_URL_CARDATA);
+            exit();
+        }
+        
+        // Megjelenítés: sikeres üzenetek, hibaüzenetek kezelése
+        if (isset($_SESSION['success'])) {
+            $view .= '<div class="success-message">' . $_SESSION['success'] . '</div>';
+            unset($_SESSION['success']);
+        }
+    
+        if (isset($_SESSION['errors']) && !empty($_SESSION['errors'])) {
+            foreach ($_SESSION['errors'] as $error) {
+                $view .= '<div class="error-message">' . $error . '</div>';
+            }
+            unset($_SESSION['errors']);
+        }
+    
+        // Átlagfogyasztás eredmény megjelenítése
+        if (isset($_SESSION['result'])) {
+            $result = $_SESSION['result'];
+            unset($_SESSION['result']);
+        } else {
+            $result = '';
+        }
+    
+        // Gépjármű adatok lekérése és megjelenítése
+        $carData = CarsModel::GetCarData();
+        $view .= KecsoCarView::CarData($carData, $editCarData);
+    
+        // Átlagfogyasztás űrlap megjelenítése
+        $view .= KecsoCarView::RenderForm($result, $beforeKm, $afterKm, $totalLiters);
+    
         $view .= IndexView::End();
-
+    
         return $view;
     }
+    
+    
+    
 
     public function carcost($param): string {
         $view = IndexView::Begin();

@@ -104,15 +104,14 @@ public function nyerges(): string
             $ids = $_POST['ids'] ?? '';
             $name = $_POST['name'] ?? '';
 
-            // Azonosító validálása: csak számok lehetnek
+            // Azonosító validálása: 
             if (empty($ids) || empty($name)) {
-                $_SESSION['error_message'] = 'Futár hozzáadáshoz minden mező kitöltése kötelező!';
+                $_SESSION['error_message'] = 'Futár név hozzáadáshoz minden mező kitöltése kötelező';
             } else if (ctype_digit($ids) && preg_match('/^[\p{L}\s]+$/u', $name)) {
-                // Az $name változóban csak betűk és szóközök lehetnek
                 $courior = ['ids' => (int) $ids, 'name' => $name];
                 $result = CouriorsModel::InsertCouriors($courior);
                 if ($result) {
-                    $_SESSION['success_message'] = 'A futár adatai sikeresen hozzáadva.';
+                    $_SESSION['success_message'] = 'A futár neve sikeresen hozzáadva a táblához.';
                 } else {
                     $_SESSION['error_message'] = 'Már létezik ilyen azonosítóval vagy névvel futár.';
                 }
@@ -128,7 +127,7 @@ public function nyerges(): string
             $couriorId = $_POST['deleteCouriorId'] ?? '';
             if (!empty($couriorId)) {
                 CouriorsModel::DeleteCouriors($couriorId);
-                $_SESSION['success_message'] = 'A futár adati sikeresen törölve.';
+                $_SESSION['success_message'] = 'A futár neve sikeresen törölve a táblából .';
             }
             header("Location: " . $_SERVER['REQUEST_URI']);
             exit();

@@ -57,71 +57,72 @@ class CarsModel
         $result = $collection->deleteOne(['_id' => new ObjectId($id)]);
         return $result->getDeletedCount();
     }
+    public static function InsertCarData($cardata) 
+   {
+    self::Init();
+    $collection = self::$db->cardata; // Az új kollekció neve
 
-    public static function InsertCarImage($carId, $imageData)
-    {
-        self::Init();
-        $collection = self::$db->selectCollection(self::$collectionName);
+    $date = new UTCDateTime(strtotime($cardata['date']) * 1000);
 
-        try {
-            // Az adatok beszúrása az adatbázisba ObjectId használatával
-            $result = $collection->updateOne(
-                ['_id' => new ObjectId($carId)],
-                ['$push' => ['images' => $imageData]]
-            );
+    $insertData = [
+        'ids' => $cardata['ids'],
+        'km' => $cardata['km'],
+        'liters' => $cardata['liters'],
+        'date' => $date,
+    ];
 
-            if ($result->getModifiedCount() > 0) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch (\Throwable $th) {
-            // Hibakezelés, ha valami nem sikerülne
-            
-            return false;
-        }
-    }
-
-    public static function GetCarImages($carId)
-    {
-        self::init();
-        $collection = self::$db->selectCollection(self::$collectionName);
-
-        try {
-            $car = $collection->findOne(['_id' => new ObjectId($carId)]);
-            return isset($car['images']) ? $car['images'] : [];
-        } catch (\Throwable $th) {
-            // Hibakezelés, ha valami nem sikerülne
-            
-            return [];
-        }
-    }
-
-    public static function DeleteCarImage($carId, $imageId)
-    {
-        self::Init();
-        $collection = self::$db->selectCollection(self::$collectionName);
-
-        try {
-            $result = $collection->updateOne(
-                ['_id' => new ObjectId($carId)],
-                ['$pull' => ['images' => ['_id' => $imageId]]]
-            );
-
-            if ($result->getModifiedCount() > 0) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch (\Throwable $th) {
-            // Hibakezelés, ha valami nem sikerülne
-            echo 'Hiba történt: ' . $th->getMessage();
-            return false;
-        }
-    }
-
-
-
+    $result = $collection->insertOne($insertData);
+    return $result;
+   }
+   public static function GetCarData()
+   {
+       self::Init();
+       $collection = self::$db->cardata; // Az új kollekció neve
+       $cursor = $collection->find();
+       return $cursor->toArray();
+   }
+   public static function GetCarDataById($cardataId)
+   {
+       self::Init();
+       $collection = self::$db->cardata; // Az új kollekció neve
+       $cardata = $collection->findOne(['_id' => new \MongoDB\BSON\ObjectID($cardataId)]);
+   
+       // Ellenőrizd a dátum típusát és formázását
+       if ($cardata && isset($cardata['date']) && $cardata['date'] instanceof \MongoDB\BSON\UTCDateTime) {
+           $cardata['date'] = $cardata['date']->toDateTime()->format('Y-m-d H:i:s');
+       }
+   
+       return $cardata;
+   }
+   public static function UpdateCarData($cardataId, $cardata)
+   {
+       self::Init();
+       $collection = self::$db->cardata; // Az új kollekció neve
+   
+       $date = new UTCDateTime(strtotime($cardata['date']) * 1000);
+   
+       $updateData = [
+           'ids' => $cardata['ids'],
+           'km' => $cardata['km'],
+           'liters' => $cardata['liters'],
+           'date' => $date,
+       ];
+   
+       $result = $collection->updateOne(
+           ['_id' => new \MongoDB\BSON\ObjectID($cardataId)],
+           ['$set' => $updateData]
+       );
+   
+       return $result;
+   }
+   public static function DeleteCarData($id)
+   {
+       self::Init();
+       $collection = self::$db->cardata; // Az új kollekció neve
+       $result = $collection->deleteOne(['_id' => new \MongoDB\BSON\ObjectID($id)]);
+       return $result->getDeletedCount();
+   }
+   
 //CarCost   
 public static function InsertCarCost($carcost)
 {
