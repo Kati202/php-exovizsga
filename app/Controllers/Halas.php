@@ -692,7 +692,8 @@ public static function depo3($param): string
     $view .= IndexView::OpenSection('Depó adatai');
     
     $editDepo = null;
-    $errorMessages = []; 
+    $errorMessages = [];
+    $successmessages = []; 
     
     
     

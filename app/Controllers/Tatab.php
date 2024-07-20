@@ -361,7 +361,7 @@ public function carcost2($param): string {
 
     // Autó költségek lekérése és megjelenítése
     $carcost = CarsModel::GetCarCost();
-    $view .= TatabCarView::ShowCostByGroup($cars, $startDate, $endDate);
+    //$view .= TatabCarView::ShowCostByGroup($cars, $startDate, $endDate);
     $view .= TatabCarView::CarCost($carcost, $editcarcost);
     $view .= IndexView::End();
 
@@ -747,7 +747,6 @@ public static function depo2($param): string
 }
 public function disp2($param): string
 {   
-    session_start();
     $view = IndexView::Begin();
     $view .= IndexView::OpenSection('Diszpécserek elérhetőségei');
     $dispdata = DispModel::GetDispdata(); 

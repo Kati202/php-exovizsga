@@ -266,7 +266,7 @@ private static function CarDataEdit($editcardata)
                         <td>' . htmlspecialchars($item['part'] ?? '') . '</td>
                         <td>' . htmlspecialchars($item['cost'] ?? '') . '</td>
                         <td>
-                            <form method="post" action="' . Config::HALAS_URL_CARCOST . '?operation=carcost&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
+                            <form method="post" action="' . Config::HALAS_URL_CARCOST . '?operation=carcost3&param=' . htmlspecialchars($item['_id'] ?? '') . '" style="display:inline;">
                              <input type="hidden" name="updateCarCostId" value="' . ($item['_id'] ?? '') . '">
                              <button type="submit" name="updateCarcost">Szerkesztés</button>
                             </form>
