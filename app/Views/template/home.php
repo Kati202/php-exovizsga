@@ -47,7 +47,7 @@
                 <li>Herczeg Béla (tulajdonos) <span>Tel: 0670 333 3601</span></li>
                 <li>Kállai László (depókontroller) <span>Tel: 0670 932 6531</span></li>
                 <li>Ruzsin Krisztián (kecskeméti depóvezető) <span>Tel: 0620 449 3982</span></li>
-                <li>Ruzsin Krisztián (kecskeméti depóvezető) <span>Tel: 0620 449 3982</span></li>
+                <li>Tatabányai,nyergesújfalui depóvezető (akit nem ismerek) <span>Tel: 0630 786 4563</span></li>
                 <li>Vass Barna (kiskunhalasi depóvezető) <span>Tel: 0620 449 3982</span></li>
             </ul>
         </div>
