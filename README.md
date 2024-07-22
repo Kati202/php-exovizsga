@@ -1,4 +1,4 @@
-Az EXO. depós projekt célja a kecskeméti, kiskunhalasi, nyergesújfalui és tatabányai depók működésének kezelése, különös tekintettel a gépjárművek és futárok adatainak kezelésére. Ezenfelül depó adat aloldal és diszpécseres aloldal is rendelkezésre áll (átalános adatgyűjtésre). A projekt lehetőséget biztosít gépjárművek, futárok, depó adatok, valamint diszpécser adatok hozzáadására, frissítésére, törlésére,futárcímadatok bizonyos időn belüli nyomon követésére illetve rendelkezésre áll egy üzemanyagszámítási űrlap.A projektem összeszedettség terén nem a legjobb ezt később javítom majd(de próbáltam segíteni adatmegjelölésekkel).Köszönöm az éves munkád sokat tanultam/tanultunk tőled :Đ!
+Az EXO. depós projekt célja a kecskeméti, kiskunhalasi, nyergesújfalui és tatabányai depók működésének kezelése, különös tekintettel a gépjárművek és futárok adatainak kezelésére. Ezenfelül depó adat aloldal és diszpécseres aloldal is rendelkezésre áll (átalános adatgyűjtésre). A projekt lehetőséget biztosít gépjárművek, futárok, depó adatok, valamint diszpécser adatok hozzáadására, frissítésére, törlésére,futárcímadatok bizonyos időn belüli nyomon követésére illetve rendelkezésre áll egy üzemanyagszámítási űrlap is.A projektem összeszedettség terén lehetne jobb is ezt később javítom majd(de próbáltam segíteni adatmegjelölésekkel).Köszönöm az éves munkád sokat tanultam/tanultunk tőled :Đ!
 
 ## Funkciók
 
@@ -21,6 +21,7 @@ Az EXO. depós projekt célja a kecskeméti, kiskunhalasi, nyergesújfalui és t
     ```sh
     composer install
     oldalhoz való bejelentkezés a Configba
+    az adatbázis export benne van a projektben a mongodb vizsga mappában(csak egyesével tudtam exportálni a táblákat)
     ```
 
 ## Használat
