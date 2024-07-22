@@ -21,7 +21,7 @@ Az EXO. depós projekt célja a kecskeméti, kiskunhalasi, nyergesújfalui és t
     ```sh
     composer install
     oldalhoz való bejelentkezés a Configba
-    az adatbázis export benne van a projektben a mongo db vizsga mappában(csak egyesével tudtam exportálni a táblákat)
+    az adatbázis export benne van a projektben a mongodb vizsga mappában(csak egyesével tudtam exportálni a táblákat)
     ```
 
 ## Használat
