@@ -1,0 +1,16 @@
+[{
+  "_id": {
+    "$oid": "6699345ef13ebc07eb0db055"
+  },
+  "name": "Csilla",
+  "ids": 3,
+  "day": 1,
+  "month": "Július",
+  "time": {
+    "$date": "2024-07-17T17:27:00.000Z"
+  },
+  "total_addresses": 156,
+  "delivered_addresses": 150,
+  "final_return": 3,
+  "live_return": 3
+}]

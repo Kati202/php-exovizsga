@@ -1,0 +1,40 @@
+[{
+  "_id": {
+    "$oid": "667db07730ccc2a84c0086ad"
+  },
+  "name": "Csilla",
+  "title": "Általános",
+  "phone": "0670 935 6786"
+},
+{
+  "_id": {
+    "$oid": "667db09730ccc2a84c0086ae"
+  },
+  "name": "Kati",
+  "title": "Általános",
+  "phone": "0670 506 1234"
+},
+{
+  "_id": {
+    "$oid": "667db0c830ccc2a84c0086af"
+  },
+  "name": "Anna",
+  "title": "Importos",
+  "phone": "0670 785 4597"
+},
+{
+  "_id": {
+    "$oid": "667db0e730ccc2a84c0086b0"
+  },
+  "name": "Ottó",
+  "title": "Importos",
+  "phone": "0670 456 9763"
+},
+{
+  "_id": {
+    "$oid": "667db10730ccc2a84c0086b1"
+  },
+  "name": "Emma",
+  "title": "Exo shop",
+  "phone": "0670 784 2357"
+}]

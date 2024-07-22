@@ -1,0 +1,36 @@
+[{
+  "_id": {
+    "$oid": "6697fae4dbe3f6a40c046f0c"
+  },
+  "ids": 1,
+  "name": "Spitzer Tibor",
+  "date": "1995.06.05",
+  "dateaddress": "Kecskemét",
+  "age": "30 éves",
+  "address": "6000,Kecskemét.Március 15-ei u.22 2/4",
+  "mothername": "Balog Judit"
+},
+{
+  "_id": {
+    "$oid": "669b7ad158280d985406b51a"
+  },
+  "ids": 6,
+  "name": "Megyeri Alex",
+  "date": "2000.07.08",
+  "dateaddress": "Kecskemét",
+  "age": "24 éves",
+  "address": "6050,Lajosmizse.Akácfa u 9",
+  "mothername": "Szűcs Anikó"
+},
+{
+  "_id": {
+    "$oid": "669b7b0f58280d985406b51b"
+  },
+  "ids": 2,
+  "name": "Csáki Attila",
+  "date": "1986.09.05",
+  "dateaddress": "Kecskemét",
+  "age": "38 éves",
+  "address": "6000,Kecskemét.Forradalom u.27 3/7",
+  "mothername": "Kiss Anna"
+}]

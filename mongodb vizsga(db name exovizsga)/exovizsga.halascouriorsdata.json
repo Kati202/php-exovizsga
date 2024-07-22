@@ -1,0 +1,12 @@
+[{
+  "_id": {
+    "$oid": "6697bf08dbe3f6a40c046eeb"
+  },
+  "ids": 4,
+  "name": "Halas Csilla",
+  "date": "1999.06.17",
+  "dateaddress": "Kecskemét",
+  "age": "25 éves",
+  "address": "6400,Kiskunhalas Magyar u.15",
+  "mothername": "Halas Viktória"
+}]

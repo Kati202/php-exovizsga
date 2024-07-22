@@ -1,0 +1,12 @@
+[{
+  "_id": {
+    "$oid": "669b7c3958280d985406b51d"
+  },
+  "ids": 2,
+  "name": "Tatabánya Csilla",
+  "date": "1998.06.13",
+  "dateaddress": "Tatabánya",
+  "age": "26 éves",
+  "address": "2800.Tatabánya,Erdő u.16",
+  "mothername": "Tatabánya Fanni"
+}]

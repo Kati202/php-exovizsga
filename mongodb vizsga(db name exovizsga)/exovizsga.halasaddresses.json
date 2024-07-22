@@ -1,0 +1,16 @@
+[{
+  "_id": {
+    "$oid": "6697ba5cdbe3f6a40c046ee0"
+  },
+  "name": "Halas Csilla",
+  "ids": 3,
+  "day": 1,
+  "month": "Augusztus",
+  "time": {
+    "$date": "2024-08-07T14:34:00.000Z"
+  },
+  "total_addresses": 130,
+  "delivered_addresses": 125,
+  "final_return": 3,
+  "live_return": 2
+}]

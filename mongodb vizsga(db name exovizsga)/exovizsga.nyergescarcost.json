@@ -1,0 +1,11 @@
+[{
+  "_id": {
+    "$oid": "6697bcfedbe3f6a40c046ee4"
+  },
+  "ids": "AA-FV-786",
+  "date": {
+    "$date": "2024-07-19T14:45:00.000Z"
+  },
+  "part": "2 db első féktárcsa",
+  "cost": 60000
+}]

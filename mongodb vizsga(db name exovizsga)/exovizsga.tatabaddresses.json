@@ -1,0 +1,80 @@
+[{
+  "_id": {
+    "$oid": "6697c5eddbe3f6a40c046eee"
+  },
+  "name": "Attila",
+  "ids": 1,
+  "day": 1,
+  "month": "Július",
+  "time": {
+    "$date": "2024-07-31T15:23:00.000Z"
+  },
+  "total_addresses": 110,
+  "delivered_addresses": 115,
+  "final_return": 2,
+  "live_return": 3
+},
+{
+  "_id": {
+    "$oid": "669933b9f13ebc07eb0db053"
+  },
+  "name": "Spitzer Tibor",
+  "ids": 2,
+  "day": 1,
+  "month": "Augusztus",
+  "time": {
+    "$date": "2024-07-17T17:24:00.000Z"
+  },
+  "total_addresses": 156,
+  "delivered_addresses": 140,
+  "final_return": 4,
+  "live_return": 3
+},
+{
+  "_id": {
+    "$oid": "669945e4f13ebc07eb0db058"
+  },
+  "name": "Attila",
+  "ids": 5,
+  "day": 1,
+  "month": "Júliu",
+  "time": {
+    "$date": "2024-07-25T18:42:00.000Z"
+  },
+  "total_addresses": 133,
+  "delivered_addresses": 129,
+  "final_return": 2,
+  "live_return": 3
+},
+{
+  "_id": {
+    "$oid": "66994614f13ebc07eb0db059"
+  },
+  "name": "Attila",
+  "ids": 6,
+  "day": 1,
+  "month": "Július",
+  "time": {
+    "$date": "2024-07-25T18:42:00.000Z"
+  },
+  "total_addresses": 133,
+  "delivered_addresses": 149,
+  "final_return": 4,
+  "live_return": 3
+},
+{
+  "_id": {
+    "$oid": "66994664f13ebc07eb0db05a"
+  },
+  "name": "Attila",
+  "ids": 1,
+  "day": 2,
+  "month": "Július",
+  "time": {
+    "$date": "2024-07-11T18:44:00.000Z"
+  },
+  "total_addresses": 155,
+  "delivered_addresses": 129,
+  "final_return": 5,
+  "live_return": 3
+}]

@@ -1,0 +1,28 @@
+[{
+  "_id": {
+    "$oid": "667af29e584888ed5209416e"
+  },
+  "title": "Területe",
+  "content": "300m2"
+},
+{
+  "_id": {
+    "$oid": "667af2ab584888ed5209416f"
+  },
+  "title": "Futárok száma",
+  "content": "16 ember"
+},
+{
+  "_id": {
+    "$oid": "667af2ea584888ed52094170"
+  },
+  "title": "Dízel gépjárművek száma",
+  "content": "14 db"
+},
+{
+  "_id": {
+    "$oid": "669b7b6e58280d985406b51c"
+  },
+  "title": "Elektromos gépjárművek",
+  "content": "5 db"
+}]

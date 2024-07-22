@@ -1,0 +1,12 @@
+[{
+  "_id": {
+    "$oid": "669b7d9258280d985406b520"
+  },
+  "ids": 3,
+  "name": "Nyerges Csilla",
+  "date": "1996.02.06",
+  "dateaddress": "Tatabánya",
+  "age": "28 éves",
+  "address": "2800.Tatabánya,Sarkantyú u.5",
+  "mothername": "Nyerges Emma"
+}]

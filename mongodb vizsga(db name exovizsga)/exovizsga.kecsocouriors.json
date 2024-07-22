@@ -1,0 +1,56 @@
+[{
+  "_id": {
+    "$oid": "6693e9cef443e9b136086b7c"
+  },
+  "ids": 13,
+  "name": "Péter Attila"
+},
+{
+  "_id": {
+    "$oid": "6693e9d8f443e9b136086b7d"
+  },
+  "ids": 6,
+  "name": "Megyeri Alex"
+},
+{
+  "_id": {
+    "$oid": "6693ede0f443e9b136086b85"
+  },
+  "ids": 5,
+  "name": "Apró Dávid"
+},
+{
+  "_id": {
+    "$oid": "6693eecef443e9b136086b86"
+  },
+  "ids": 15,
+  "name": "Bencze Dániel"
+},
+{
+  "_id": {
+    "$oid": "6694fb658c56443c430b7232"
+  },
+  "ids": 7,
+  "name": "Kiss Ferenc"
+},
+{
+  "_id": {
+    "$oid": "66956ad08c56443c430b7295"
+  },
+  "ids": 4,
+  "name": "Molnár Márton"
+},
+{
+  "_id": {
+    "$oid": "6697c831dbe3f6a40c046ef1"
+  },
+  "ids": 17,
+  "name": "Lakatos Róbert"
+},
+{
+  "_id": {
+    "$oid": "669d4068aaef807019010eb6"
+  },
+  "ids": 1,
+  "name": "Spitzer Tibor"
+}]
